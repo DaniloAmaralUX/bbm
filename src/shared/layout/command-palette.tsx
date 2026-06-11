@@ -12,7 +12,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/shared/ui/command'
-import { trs } from '@/features/tr/data/trs'
+import { trs } from '@/features/documents/data/trs'
 
 type NavItem = {
   label: string
@@ -23,8 +23,8 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
-  { label: 'TRs', hint: 'lista', icon: Files, to: '/trs' },
-  { label: 'Novo TR', icon: FilePlus, to: '/novo-tr' },
+  { label: 'Documentos', hint: 'lista', icon: Files, to: '/documentos' },
+  { label: 'Novo documento', icon: FilePlus, to: '/documentos/novo' },
 ]
 
 export function CommandPaletteTrigger() {
@@ -49,7 +49,7 @@ export function CommandPaletteTrigger() {
 
   const goToTR = (trId: string) => {
     setOpen(false)
-    void navigate({ to: '/tr/$trId', params: { trId } })
+    void navigate({ to: '/documentos/$documentoId', params: { documentoId: trId } })
   }
 
   const recentTRs = trs.slice(0, 6)
@@ -64,14 +64,14 @@ export function CommandPaletteTrigger() {
         className='h-9 w-full max-w-xs justify-start gap-2 rounded-xl bg-muted/50 text-sm font-normal text-muted-foreground hover:bg-muted/70'
       >
         <Search aria-hidden='true' className='size-4' />
-        <span className='flex-1 text-start'>Buscar TR ou ação…</span>
+        <span className='flex-1 text-start'>Buscar documento ou ação…</span>
         <kbd className='hidden h-5 items-center gap-1 rounded border bg-background px-1.5 text-[10px] font-medium text-muted-foreground sm:inline-flex'>
           <span className='text-xs'>⌘</span>K
         </kbd>
       </Button>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder='Buscar TR, página ou ação…' />
+        <CommandInput placeholder='Buscar documento, página ou ação…' />
         <CommandList>
           <CommandEmpty>Nada encontrado.</CommandEmpty>
           <CommandGroup heading='Navegação'>
@@ -90,7 +90,7 @@ export function CommandPaletteTrigger() {
             ))}
           </CommandGroup>
           <CommandSeparator />
-          <CommandGroup heading='TRs recentes'>
+          <CommandGroup heading='Documentos recentes'>
             {recentTRs.map((tr) => (
               <CommandItem
                 key={tr.id}

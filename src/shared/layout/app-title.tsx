@@ -8,7 +8,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/shared/ui/sidebar'
-import { appIdentity } from '@/features/tr/data/app'
+import { appIdentity } from '@/features/documents/data/app'
 import { Button } from '../ui/button'
 
 export function AppTitle() {

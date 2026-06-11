@@ -1,5 +1,5 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
-  "entry": ["src/features/tr/data/doc-type.ts"],
+  "entry": ["src/features/documents/data/doc-type.ts"],
   "ignore": ["src/tanstack-table.d.ts"]
 }

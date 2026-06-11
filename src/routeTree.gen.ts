@@ -11,10 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedTrsRouteImport } from './routes/_authenticated/trs'
-import { Route as AuthenticatedNovoTrRouteImport } from './routes/_authenticated/novo-tr'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedTrTrIdRouteImport } from './routes/_authenticated/tr.$trId'
+import { Route as AuthenticatedDocumentosIndexRouteImport } from './routes/_authenticated/documentos.index'
+import { Route as AuthenticatedDocumentosNovoRouteImport } from './routes/_authenticated/documentos.novo'
+import { Route as AuthenticatedDocumentosDocumentoIdRouteImport } from './routes/_authenticated/documentos.$documentoId'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -25,63 +25,76 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedTrsRoute = AuthenticatedTrsRouteImport.update({
-  id: '/trs',
-  path: '/trs',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedNovoTrRoute = AuthenticatedNovoTrRouteImport.update({
-  id: '/novo-tr',
-  path: '/novo-tr',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedTrTrIdRoute = AuthenticatedTrTrIdRouteImport.update({
-  id: '/tr/$trId',
-  path: '/tr/$trId',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+const AuthenticatedDocumentosIndexRoute =
+  AuthenticatedDocumentosIndexRouteImport.update({
+    id: '/documentos/',
+    path: '/documentos/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDocumentosNovoRoute =
+  AuthenticatedDocumentosNovoRouteImport.update({
+    id: '/documentos/novo',
+    path: '/documentos/novo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDocumentosDocumentoIdRoute =
+  AuthenticatedDocumentosDocumentoIdRouteImport.update({
+    id: '/documentos/$documentoId',
+    path: '/documentos/$documentoId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/novo-tr': typeof AuthenticatedNovoTrRoute
-  '/trs': typeof AuthenticatedTrsRoute
-  '/tr/$trId': typeof AuthenticatedTrTrIdRoute
+  '/documentos/$documentoId': typeof AuthenticatedDocumentosDocumentoIdRoute
+  '/documentos/novo': typeof AuthenticatedDocumentosNovoRoute
+  '/documentos/': typeof AuthenticatedDocumentosIndexRoute
 }
 export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/novo-tr': typeof AuthenticatedNovoTrRoute
-  '/trs': typeof AuthenticatedTrsRoute
   '/': typeof AuthenticatedIndexRoute
-  '/tr/$trId': typeof AuthenticatedTrTrIdRoute
+  '/documentos/$documentoId': typeof AuthenticatedDocumentosDocumentoIdRoute
+  '/documentos/novo': typeof AuthenticatedDocumentosNovoRoute
+  '/documentos': typeof AuthenticatedDocumentosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/novo-tr': typeof AuthenticatedNovoTrRoute
-  '/_authenticated/trs': typeof AuthenticatedTrsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
-  '/_authenticated/tr/$trId': typeof AuthenticatedTrTrIdRoute
+  '/_authenticated/documentos/$documentoId': typeof AuthenticatedDocumentosDocumentoIdRoute
+  '/_authenticated/documentos/novo': typeof AuthenticatedDocumentosNovoRoute
+  '/_authenticated/documentos/': typeof AuthenticatedDocumentosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/novo-tr' | '/trs' | '/tr/$trId'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/documentos/$documentoId'
+    | '/documentos/novo'
+    | '/documentos/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/dashboard' | '/novo-tr' | '/trs' | '/' | '/tr/$trId'
+  to:
+    | '/dashboard'
+    | '/'
+    | '/documentos/$documentoId'
+    | '/documentos/novo'
+    | '/documentos'
   id:
     | '__root__'
     | '/_authenticated'
     | '/_authenticated/dashboard'
-    | '/_authenticated/novo-tr'
-    | '/_authenticated/trs'
     | '/_authenticated/'
-    | '/_authenticated/tr/$trId'
+    | '/_authenticated/documentos/$documentoId'
+    | '/_authenticated/documentos/novo'
+    | '/_authenticated/documentos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -104,20 +117,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/trs': {
-      id: '/_authenticated/trs'
-      path: '/trs'
-      fullPath: '/trs'
-      preLoaderRoute: typeof AuthenticatedTrsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/novo-tr': {
-      id: '/_authenticated/novo-tr'
-      path: '/novo-tr'
-      fullPath: '/novo-tr'
-      preLoaderRoute: typeof AuthenticatedNovoTrRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -125,11 +124,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/tr/$trId': {
-      id: '/_authenticated/tr/$trId'
-      path: '/tr/$trId'
-      fullPath: '/tr/$trId'
-      preLoaderRoute: typeof AuthenticatedTrTrIdRouteImport
+    '/_authenticated/documentos/': {
+      id: '/_authenticated/documentos/'
+      path: '/documentos'
+      fullPath: '/documentos/'
+      preLoaderRoute: typeof AuthenticatedDocumentosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/documentos/novo': {
+      id: '/_authenticated/documentos/novo'
+      path: '/documentos/novo'
+      fullPath: '/documentos/novo'
+      preLoaderRoute: typeof AuthenticatedDocumentosNovoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/documentos/$documentoId': {
+      id: '/_authenticated/documentos/$documentoId'
+      path: '/documentos/$documentoId'
+      fullPath: '/documentos/$documentoId'
+      preLoaderRoute: typeof AuthenticatedDocumentosDocumentoIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
@@ -137,18 +150,19 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedNovoTrRoute: typeof AuthenticatedNovoTrRoute
-  AuthenticatedTrsRoute: typeof AuthenticatedTrsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
-  AuthenticatedTrTrIdRoute: typeof AuthenticatedTrTrIdRoute
+  AuthenticatedDocumentosDocumentoIdRoute: typeof AuthenticatedDocumentosDocumentoIdRoute
+  AuthenticatedDocumentosNovoRoute: typeof AuthenticatedDocumentosNovoRoute
+  AuthenticatedDocumentosIndexRoute: typeof AuthenticatedDocumentosIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedNovoTrRoute: AuthenticatedNovoTrRoute,
-  AuthenticatedTrsRoute: AuthenticatedTrsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
-  AuthenticatedTrTrIdRoute: AuthenticatedTrTrIdRoute,
+  AuthenticatedDocumentosDocumentoIdRoute:
+    AuthenticatedDocumentosDocumentoIdRoute,
+  AuthenticatedDocumentosNovoRoute: AuthenticatedDocumentosNovoRoute,
+  AuthenticatedDocumentosIndexRoute: AuthenticatedDocumentosIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

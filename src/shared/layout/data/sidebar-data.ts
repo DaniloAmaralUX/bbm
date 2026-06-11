@@ -1,5 +1,5 @@
 import { FilePlus2, FileText, LayoutDashboard } from 'lucide-react'
-import { appIdentity, currentUser } from '@/features/tr/data/app'
+import { appIdentity, currentUser } from '@/features/documents/data/app'
 import { type SidebarData } from '../types'
 
 export const sidebarData: SidebarData = {
@@ -19,13 +19,13 @@ export const sidebarData: SidebarData = {
           icon: LayoutDashboard,
         },
         {
-          title: 'TRs',
-          url: '/trs',
+          title: 'Documentos',
+          url: '/documentos',
           icon: FileText,
         },
         {
-          title: 'Novo TR',
-          url: '/novo-tr',
+          title: 'Novo documento',
+          url: '/documentos/novo',
           icon: FilePlus2,
         },
       ],

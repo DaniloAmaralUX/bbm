@@ -1,6 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { getTemplateDefinition } from '@/features/tr/data/templates'
-import { useTRWizard } from '@/features/tr/wizard/store/use-tr-wizard'
+import { getTemplateDefinition } from '@/features/documents/data/templates'
+import { useTRWizard } from '@/features/documents/wizard/store/use-tr-wizard'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -23,17 +23,17 @@ function buildCrumbs(pathname: string): Crumb[] {
     case 'dashboard':
       return [{ label: 'Dashboard' }]
 
-    case 'trs':
-      return [{ label: 'TRs' }]
-
-    case 'novo-tr':
-      return [{ label: 'TRs', href: '/trs' }, { label: 'Novo TR' }]
-
-    case 'tr': {
-      const trId = rest[0]
+    case 'documentos': {
+      const sub = rest[0]
+      if (!sub) return [{ label: 'Documentos' }]
+      if (sub === 'novo')
+        return [
+          { label: 'Documentos', href: '/documentos' },
+          { label: 'Novo documento' },
+        ]
       return [
-        { label: 'TRs', href: '/trs' },
-        { label: trId ? `TR ${trId}` : 'TR' },
+        { label: 'Documentos', href: '/documentos' },
+        { label: `Documento ${sub}` },
       ]
     }
 
@@ -61,15 +61,15 @@ function useWizardStepLabel(active: boolean): string | null {
 export function RouteBreadcrumb() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const crumbs = buildCrumbs(pathname)
-  const wizardStep = useWizardStepLabel(pathname === '/novo-tr')
+  const wizardStep = useWizardStepLabel(pathname === '/documentos/novo')
 
   if (crumbs.length === 0) return null
 
   const finalCrumbs =
-    wizardStep && pathname === '/novo-tr'
+    wizardStep && pathname === '/documentos/novo'
       ? [
-          { label: 'TRs', href: '/trs' },
-          { label: 'Novo TR', href: '/novo-tr' },
+          { label: 'Documentos', href: '/documentos' },
+          { label: 'Novo documento', href: '/documentos/novo' },
           { label: wizardStep },
         ]
       : crumbs
