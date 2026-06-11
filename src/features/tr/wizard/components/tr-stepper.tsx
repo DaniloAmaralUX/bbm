@@ -14,11 +14,11 @@ import {
   CollapsibleTrigger,
 } from '@/shared/ui/collapsible'
 import { Progress } from '@/shared/ui/progress'
-import { type TRSectionDefinition } from '@/features/tr/data/templates'
+import { type SectionDefinition } from '@/features/tr/data/templates'
 
 type TRStepperProps = {
   currentStep: number
-  steps: TRSectionDefinition[]
+  steps: SectionDefinition[]
   onStepClick?: (step: number) => void
   pendingLabels?: string[]
   pendingByStep?: number[]
@@ -123,7 +123,7 @@ export function TRStepper({
 }
 
 type HorizontalStepperProps = {
-  steps: TRSectionDefinition[]
+  steps: SectionDefinition[]
   currentStep: number
   pendingLabels: string[]
   pendingByStep: number[]
@@ -200,7 +200,7 @@ function HorizontalStepper({
 }
 
 type StepRailItemProps = {
-  step: TRSectionDefinition
+  step: SectionDefinition
   index: number
   currentStep: number
   pendingLabels: string[]

@@ -76,11 +76,11 @@ import {
 } from '@/shared/ui/tooltip'
 import {
   type TRDeliveryLocation,
-  type TRFieldDefinition,
+  type FieldDefinition,
   type TRInstitution,
   type TRLot,
   type TRLotItem,
-  type TRSectionDefinition,
+  type SectionDefinition,
   type TRTemplateType,
   buildDocumentSections,
   getDefaultTemplateForInstitution,
@@ -162,7 +162,7 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
     context.institution,
     context.templateType
   )
-  const wizardSteps = useMemo<TRSectionDefinition[]>(
+  const wizardSteps = useMemo<SectionDefinition[]>(
     () => [
       {
         id: 'setup',
@@ -363,7 +363,7 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
     setAssistantTarget(null)
   }, [currentStep, setAssistantTarget])
 
-  const handleFieldFocus = (field: TRFieldDefinition) => {
+  const handleFieldFocus = (field: FieldDefinition) => {
     if (currentStep === 0) return
     if (currentSection.kind !== 'fields') return
     setAssistantTarget({
@@ -372,7 +372,7 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
     })
   }
 
-  const handleFieldBlur = (field: TRFieldDefinition, value: string) => {
+  const handleFieldBlur = (field: FieldDefinition, value: string) => {
     const fieldError = validateSingleField(field, value)
     setStepErrorState((prev) => {
       const baseValues = prev.scope === errorScope ? prev.values : {}
@@ -1116,12 +1116,12 @@ function FieldSection({
   onFieldFocus,
 }: {
   title: string
-  fields: TRFieldDefinition[]
+  fields: FieldDefinition[]
   values: Record<string, unknown>
   errors: StepErrors
   onChange: (fieldId: string, value: string) => void
-  onFieldBlur?: (field: TRFieldDefinition, value: string) => void
-  onFieldFocus?: (field: TRFieldDefinition) => void
+  onFieldBlur?: (field: FieldDefinition, value: string) => void
+  onFieldFocus?: (field: FieldDefinition) => void
 }) {
   return (
     <div className='space-y-5'>
@@ -1784,13 +1784,13 @@ function FieldRenderer({
   onBlur,
   onFocus,
 }: {
-  field: TRFieldDefinition
+  field: FieldDefinition
   value: string
   error?: string
   className?: string
   onChange: (value: string) => void
   onBlur?: (value: string) => void
-  onFocus?: (field: TRFieldDefinition) => void
+  onFocus?: (field: FieldDefinition) => void
 }) {
   const describedBy = [
     field.description ? `${field.id}-desc` : null,
@@ -1956,7 +1956,7 @@ function FieldBlock({
 }
 
 function validateCurrentStep(
-  section: TRSectionDefinition,
+  section: SectionDefinition,
   context: {
     title: string
     responsibleUnit: string
@@ -2063,7 +2063,7 @@ function validateCurrentStep(
 }
 
 function validateSingleField(
-  field: TRFieldDefinition,
+  field: FieldDefinition,
   value: string
 ): string | undefined {
   if (!field.required) return undefined

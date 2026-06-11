@@ -13,38 +13,44 @@ export const trTemplateTypes = [
 export type TRInstitution = (typeof trInstitutions)[number]
 export type TRTemplateType = (typeof trTemplateTypes)[number]
 
-export type TRFieldInputType = 'text' | 'textarea' | 'select' | 'date' | 'email'
+export type FieldInputType = 'text' | 'textarea' | 'select' | 'date' | 'email'
 
-export type TRFieldDefinition = {
+export type FieldDefinition = {
   id: string
   label: string
-  input: TRFieldInputType
+  input: FieldInputType
   required?: boolean
   placeholder?: string
   description?: string
   options?: Array<{ label: string; value: string }>
   autocomplete?: string
   spellCheck?: boolean
+  /**
+   * Campo comum da cadeia DFD -> ETP -> TR: seu valor flui para o documento
+   * seguinte (herança). A lógica de herança em si chega no PR-4
+   * (inheritCommonFields); aqui só marcamos quais campos participam.
+   */
+  inheritable?: boolean
 }
 
-export type TRSectionKind = 'fields' | 'lots' | 'deliveries' | 'review'
+export type SectionKind = 'fields' | 'lots' | 'deliveries' | 'review'
 
-export type TRSectionDefinition = {
+export type SectionDefinition = {
   id: string
   title: string
   description: string
-  kind: TRSectionKind
+  kind: SectionKind
   fieldIds?: string[]
 }
 
-export type TRTemplateDefinition = {
+export type ModelDefinition = {
   institution: TRInstitution
   templateType: TRTemplateType
   label: string
   badge: string
   intro: string
-  fields: Record<string, TRFieldDefinition>
-  sections: TRSectionDefinition[]
+  fields: Record<string, FieldDefinition>
+  sections: SectionDefinition[]
 }
 
 export type TRLotItem = {
@@ -71,19 +77,19 @@ export type TRDeliveryLocation = {
   address: string
 }
 
-export type TRDocumentData = Record<
+export type DocumentData = Record<
   string,
   string | TRLot[] | TRDeliveryLocation[]
 >
 
-export type TRReviewState = {
+export type ReviewState = {
   totalRequired: number
   completedRequired: number
   pendingLabels: string[]
   isReady: boolean
 }
 
-export type TRDocumentSection =
+export type DocumentSection =
   | {
       kind: 'prose'
       title: string
@@ -115,7 +121,35 @@ const modeOptions = [
   { label: 'Remota', value: 'remota' },
 ]
 
-const institutionalFields: Record<string, TRFieldDefinition> = {
+/**
+ * Ids canônicos dos campos comuns da cadeia DFD -> ETP -> TR (PRD secao 4).
+ * Estes valores fluem para o documento seguinte via herança. Os ids de unidade,
+ * responsável, vínculo ao PCA e solução se consolidam quando os modelos padrão
+ * nascerem (PR-3); 'object' e 'justification' já existem nos modelos atuais.
+ */
+const commonFieldIds = [
+  'object',
+  'justification',
+  'requestingUnit',
+  'responsible',
+  'pcaLink',
+  'solution',
+] as const
+
+/** Marca como `inheritable` os campos cujo id participa da herança da cadeia. */
+function markInheritableFields(
+  fields: Record<string, FieldDefinition>
+): Record<string, FieldDefinition> {
+  const marked: Record<string, FieldDefinition> = {}
+  for (const [fieldId, field] of Object.entries(fields)) {
+    marked[fieldId] = commonFieldIds.includes(fieldId as never)
+      ? { ...field, inheritable: true }
+      : field
+  }
+  return marked
+}
+
+const institutionalFields: Record<string, FieldDefinition> = {
   object: {
     id: 'object',
     label: 'Objeto',
@@ -265,7 +299,7 @@ const institutionalFields: Record<string, TRFieldDefinition> = {
   },
 }
 
-const sesiFields: Record<string, TRFieldDefinition> = {
+const sesiFields: Record<string, FieldDefinition> = {
   object: {
     id: 'object',
     label: 'Objeto',
@@ -443,14 +477,14 @@ function createInstitutionalTemplate(
   templateType: TRTemplateType,
   label: string,
   intro: string
-): TRTemplateDefinition {
+): ModelDefinition {
   return {
     institution,
     templateType,
     label,
     badge: institution,
     intro,
-    fields: institutionalFields,
+    fields: markInheritableFields(institutionalFields),
     sections: [
       {
         id: 'object',
@@ -531,7 +565,7 @@ function createInstitutionalTemplate(
   }
 }
 
-export const trTemplateDefinitions: TRTemplateDefinition[] = [
+export const trTemplateDefinitions: ModelDefinition[] = [
   createInstitutionalTemplate(
     'FIEPE',
     'consultoria',
@@ -575,7 +609,7 @@ export const trTemplateDefinitions: TRTemplateDefinition[] = [
     badge: 'SESI',
     intro:
       'Modelo SESI com objeto próprio, justificativas, matriz de lotes, tabela de unidades e governança contratual detalhada.',
-    fields: sesiFields,
+    fields: markInheritableFields(sesiFields),
     sections: [
       {
         id: 'object',
@@ -708,10 +742,10 @@ export function createEmptyDeliveryLocation(): TRDeliveryLocation {
 }
 
 export function createDocumentData(
-  template: TRTemplateDefinition,
-  previousData?: TRDocumentData
-): TRDocumentData {
-  const nextData: TRDocumentData = {}
+  template: ModelDefinition,
+  previousData?: DocumentData
+): DocumentData {
+  const nextData: DocumentData = {}
 
   Object.keys(template.fields).forEach((fieldId) => {
     const previousValue = previousData?.[fieldId]
@@ -739,9 +773,9 @@ export function createDocumentData(
 
 export function buildReviewState(
   context: { title: string; responsibleUnit: string },
-  template: TRTemplateDefinition,
-  documentData: TRDocumentData
-): TRReviewState {
+  template: ModelDefinition,
+  documentData: DocumentData
+): ReviewState {
   const pendingLabels: string[] = []
   let totalRequired = 2
 
@@ -827,10 +861,10 @@ export function buildDocumentSections(
     title: string
     templateType: TRTemplateType
   },
-  template: TRTemplateDefinition,
-  documentData: TRDocumentData
-): TRDocumentSection[] {
-  const sections: TRDocumentSection[] = [
+  template: ModelDefinition,
+  documentData: DocumentData
+): DocumentSection[] {
+  const sections: DocumentSection[] = [
     {
       kind: 'keyValue',
       title: 'Contexto do documento',
@@ -941,7 +975,7 @@ export function buildDocumentSections(
   return sections
 }
 
-export function hasMeaningfulData(documentData: TRDocumentData) {
+export function hasMeaningfulData(documentData: DocumentData) {
   return Object.values(documentData).some((value) => {
     if (typeof value === 'string') return hasValue(value)
     if (Array.isArray(value)) {

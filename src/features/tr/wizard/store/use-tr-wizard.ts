@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import {
   type TRDeliveryLocation,
-  type TRDocumentData,
+  type DocumentData,
   type TRInstitution,
   type TRLot,
   type TRLotItem,
@@ -78,7 +78,7 @@ type TRWizardState = TRWizardData & {
 
 function syncState(
   context: TRWizardContext,
-  documentData: TRDocumentData,
+  documentData: DocumentData,
   partial?: Partial<TRWizardData>
 ) {
   const template = getTemplateDefinition(

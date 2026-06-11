@@ -1,8 +1,8 @@
 import {
-  type TRDocumentData,
-  type TRFieldDefinition,
-  type TRSectionDefinition,
-  type TRTemplateDefinition,
+  type DocumentData,
+  type FieldDefinition,
+  type SectionDefinition,
+  type ModelDefinition,
 } from '@/features/tr/data/templates'
 import { type TRWizardContext } from '@/features/tr/wizard/types'
 
@@ -40,10 +40,10 @@ export type TRAssistantSuggestion = {
 
 export type TRAssistantRequest = {
   context: TRWizardContext
-  template: TRTemplateDefinition
-  currentSection: TRSectionDefinition
+  template: ModelDefinition
+  currentSection: SectionDefinition
   fieldId: string
-  documentData: TRDocumentData
+  documentData: DocumentData
   action: TRAssistantAction
 }
 
@@ -54,7 +54,7 @@ export type TRAssistantSupport = 'narrative' | 'short' | 'cadastral'
  * Apenas campos narrativos recebem suggest/expand/rewrite completos.
  */
 export function getFieldSupport(
-  field: TRFieldDefinition | undefined
+  field: FieldDefinition | undefined
 ): TRAssistantSupport {
   if (!field) return 'cadastral'
   if (field.input === 'textarea') return 'narrative'
@@ -379,7 +379,7 @@ const sesiRecipes: Record<string, FieldRecipe> = {
 function applyTemplateVars(
   text: string,
   context: TRWizardContext,
-  template: TRTemplateDefinition
+  template: ModelDefinition
 ): string {
   return text
     .replace(/\{titulo\}/g, context.title || 'a contratação')
@@ -388,7 +388,7 @@ function applyTemplateVars(
 }
 
 function fallbackContent(
-  field: TRFieldDefinition,
+  field: FieldDefinition,
   action: TRAssistantAction,
   family: TemplateFamily
 ): { title: string; content: string; note?: string } {

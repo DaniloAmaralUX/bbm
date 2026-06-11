@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui/table'
-import { type TRDocumentSection } from '@/features/tr/data/templates'
+import { type DocumentSection } from '@/features/tr/data/templates'
 import { slugifySection } from './tr-document-toc'
 
 type TRDocumentStatus = {
@@ -19,7 +19,7 @@ type TRDocumentStatus = {
 
 type TRDocumentViewProps = {
   title: string
-  sections: TRDocumentSection[]
+  sections: DocumentSection[]
   status?: TRDocumentStatus
   /**
    * Quando true, suprime o CardHeader interno (title + badge de status).

@@ -10,10 +10,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/shared/ui/sheet'
-import { type TRDocumentSection } from '@/features/tr/data/templates'
+import { type DocumentSection } from '@/features/tr/data/templates'
 
 type TRDocumentTocProps = {
-  sections: TRDocumentSection[]
+  sections: DocumentSection[]
   containerSelector?: string
 }
 
@@ -26,7 +26,7 @@ export function slugifySection(title: string): string {
     .replace(/^-|-$/g, '')}`
 }
 
-function filterValid(sections: TRDocumentSection[]): TRDocumentSection[] {
+function filterValid(sections: DocumentSection[]): DocumentSection[] {
   return sections.filter((section) => {
     if (section.kind === 'prose') return section.content.trim().length > 0
     if (section.kind === 'keyValue') return section.items.length > 0

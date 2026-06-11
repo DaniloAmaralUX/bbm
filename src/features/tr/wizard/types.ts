@@ -1,8 +1,8 @@
 import {
-  type TRDocumentData,
+  type DocumentData,
   type TRInstitution,
-  type TRReviewState,
-  type TRTemplateDefinition,
+  type ReviewState,
+  type ModelDefinition,
   type TRTemplateType,
   buildReviewState,
   createDocumentData,
@@ -28,14 +28,14 @@ export type TRWizardData = {
     completedAt: string
   }
   context: TRWizardContext
-  documentData: TRDocumentData
-  reviewState: TRReviewState
+  documentData: DocumentData
+  reviewState: ReviewState
   isDirty: boolean
 }
 
 export function getCurrentTemplate(
   context: TRWizardContext
-): TRTemplateDefinition {
+): ModelDefinition {
   return getTemplateDefinition(context.institution, context.templateType)
 }
 

@@ -37,7 +37,7 @@ import {
 } from '@/features/tr/data/tr-assistant'
 import {
   getTemplateDefinition,
-  type TRFieldDefinition,
+  type FieldDefinition,
 } from '@/features/tr/data/templates'
 import { useTRWizard } from '../store/use-tr-wizard'
 
@@ -71,7 +71,7 @@ export function TRAIAssistant() {
   )
 
   const target = assistant.target
-  const field: TRFieldDefinition | undefined = target
+  const field: FieldDefinition | undefined = target
     ? template.fields[target.fieldId]
     : undefined
   const support = getFieldSupport(field)

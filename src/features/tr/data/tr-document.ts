@@ -1,4 +1,4 @@
-import { type TRDocumentSection } from './templates'
+import { type DocumentSection } from './templates'
 import { trs } from './trs'
 
 export function getTRById(trId?: string) {
@@ -7,14 +7,14 @@ export function getTRById(trId?: string) {
 
 // --- Builders de seção (espelham o layout dos templates institucionais/SESI) ---
 
-function prose(title: string, content: string): TRDocumentSection {
+function prose(title: string, content: string): DocumentSection {
   return { kind: 'prose', title, content }
 }
 
 function keyValue(
   title: string,
   pairs: Array<[string, string]>
-): TRDocumentSection {
+): DocumentSection {
   return {
     kind: 'keyValue',
     title,
@@ -26,7 +26,7 @@ function table(
   title: string,
   columns: string[],
   rows: string[][]
-): TRDocumentSection {
+): DocumentSection {
   return { kind: 'table', title, columns, rows }
 }
 
@@ -60,7 +60,7 @@ type InstitutionalSpec = {
   generalConditions?: string
 }
 
-function institutionalSections(spec: InstitutionalSpec): TRDocumentSection[] {
+function institutionalSections(spec: InstitutionalSpec): DocumentSection[] {
   const s = { ...institutionalDefaults, ...spec }
   return [
     prose('1. Objeto', s.object),
@@ -122,7 +122,7 @@ type AcquisitionSpec = {
   penalties: string
 }
 
-function acquisitionSections(spec: AcquisitionSpec): TRDocumentSection[] {
+function acquisitionSections(spec: AcquisitionSpec): DocumentSection[] {
   const lotRows = spec.lots.flatMap((lot) =>
     lot.items.map((item) => [
       lot.number,
@@ -190,7 +190,7 @@ function acquisitionSections(spec: AcquisitionSpec): TRDocumentSection[] {
 
 // --- Conteúdo por TR (corpo alinhado ao título e à natureza de cada documento) ---
 
-type DocumentSpec = { model: string; sections: TRDocumentSection[] }
+type DocumentSpec = { model: string; sections: DocumentSection[] }
 
 const documentSpecs: Record<string, DocumentSpec> = {
   // SENAI · Capacitação — instrutor NR-10
@@ -475,7 +475,7 @@ export function getTRDocument(trId?: string) {
   const tr = getTRById(trId)
   const spec = documentSpecs[tr.id] ?? fallbackSpec(tr.title, tr.owner)
 
-  const contextSection: TRDocumentSection = {
+  const contextSection: DocumentSection = {
     kind: 'keyValue',
     title: 'Contexto do documento',
     items: [

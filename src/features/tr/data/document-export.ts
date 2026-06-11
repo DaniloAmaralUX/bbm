@@ -1,5 +1,5 @@
 import { appIdentity } from './app'
-import { type TRDocumentSection } from './templates'
+import { type DocumentSection } from './templates'
 import { getTRDocument } from './tr-document'
 
 /**
@@ -31,7 +31,7 @@ function escapeWithBreaks(value: string): string {
   return escapeHtml(value).replace(/\r?\n/g, '<br>')
 }
 
-function sectionToHtml(section: TRDocumentSection): string {
+function sectionToHtml(section: DocumentSection): string {
   const heading = `<h2>${escapeHtml(section.title)}</h2>`
 
   if (section.kind === 'prose') {
