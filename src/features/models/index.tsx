@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { CheckCircle2, FileText, Pencil, PencilRuler, Plus } from 'lucide-react'
+import { formatDocDate } from '@/shared/lib/format-date'
 import { Header } from '@/shared/layout/header'
 import { HeaderActions } from '@/shared/layout/header-actions'
 import { Main } from '@/shared/layout/main'
@@ -23,8 +24,6 @@ import {
 } from '@/features/documents/data/doc-type'
 import { type ModelDefinition } from '@/features/documents/data/templates'
 import { useModelsStore } from './store/use-models-store'
-
-const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
 function StateBadge({ state }: { state: ModelDefinition['state'] }) {
   if (state === 'published') {
@@ -80,7 +79,7 @@ function ModelCard({ model }: { model: ModelDefinition }) {
           <div>
             <dt className='text-xs text-muted-foreground'>Atualizado</dt>
             <dd className='font-medium tabular-nums'>
-              {dateFormatter.format(new Date(model.updatedAt))}
+              {formatDocDate(model.updatedAt)}
             </dd>
           </div>
         </dl>

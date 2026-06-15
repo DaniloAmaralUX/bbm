@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { type Row } from '@tanstack/react-table'
+import { formatDocDate } from '@/shared/lib/format-date'
 import { Badge } from '@/shared/ui/badge'
 import { Card, CardContent } from '@/shared/ui/card'
 import {
@@ -63,7 +64,7 @@ export function TRsCard({ row }: { row: Row<TRItem> }) {
             {item.unit} · {item.owner}
           </span>
           <span className='shrink-0 tabular-nums'>
-            {new Intl.DateTimeFormat('pt-BR').format(new Date(item.updatedAt))}
+            {formatDocDate(item.updatedAt)}
           </span>
         </div>
       </CardContent>

@@ -10,6 +10,7 @@ import {
   Link2,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { formatDocDate } from '@/shared/lib/format-date'
 import { Header } from '@/shared/layout/header'
 import { HeaderActions } from '@/shared/layout/header-actions'
 import { Main } from '@/shared/layout/main'
@@ -66,9 +67,7 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
   const chain = chainOf(item, trs)
   // Origem da heranca: documento raiz da cadeia, quando este e um descendente.
   const inheritanceOrigin = item.parentId ? chain[0] : undefined
-  const formattedDate = new Intl.DateTimeFormat('pt-BR').format(
-    new Date(document.updatedAt)
-  )
+  const formattedDate = formatDocDate(document.updatedAt)
 
   // Último slot do grid muda conforme estado:
   // - approved: "Aprovado em" usando updatedAt como proxy (sem campo dedicado)

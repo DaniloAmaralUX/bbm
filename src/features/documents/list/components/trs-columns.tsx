@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { type ColumnDef } from '@tanstack/react-table'
 import { DataTableColumnHeader } from '@/shared/data-table'
+import { formatDocDate } from '@/shared/lib/format-date'
 import { Badge } from '@/shared/ui/badge'
 import { Checkbox } from '@/shared/ui/checkbox'
 import { chainRole, chainRoleLabels } from '@/features/documents/data/chain'
@@ -160,9 +161,7 @@ export const trsColumns: ColumnDef<TRItem>[] = [
     },
     cell: ({ row }) => (
       <span className='tabular-nums'>
-        {new Intl.DateTimeFormat('pt-BR').format(
-          new Date(row.original.updatedAt)
-        )}
+        {formatDocDate(row.original.updatedAt)}
       </span>
     ),
   },

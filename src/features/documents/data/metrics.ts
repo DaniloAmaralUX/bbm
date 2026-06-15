@@ -1,3 +1,4 @@
+import { formatDocDate } from '@/shared/lib/format-date'
 import { childrenOf, isConcluded } from './chain'
 import { type TRStatus, trStatusTokens } from './data'
 import { type DocType, docTypeLabel, docTypes } from './doc-type'
@@ -13,14 +14,6 @@ const percentFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'percent',
   maximumFractionDigits: 0,
 })
-
-const dateFormatter = new Intl.DateTimeFormat('pt-BR')
-
-/** Converte `AAAA-MM-DD` num Date LOCAL (evita deslocamento de fuso do parse ISO). */
-function parseLocalDate(iso: string): Date {
-  const [year, month, day] = iso.split('-').map(Number)
-  return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1)
-}
 
 /** Ordem canônica dos status na visualização (rascunho antes de aprovado). */
 const statusOrder: TRStatus[] = ['draft', 'approved']
@@ -75,7 +68,7 @@ export function recentDocuments(items: TRItem[], limit = 5): RecentDocument[] {
       unit: item.unit,
       owner: item.owner,
       status: item.status,
-      updatedAt: dateFormatter.format(parseLocalDate(item.updatedAt)),
+      updatedAt: formatDocDate(item.updatedAt),
     }))
 }
 
