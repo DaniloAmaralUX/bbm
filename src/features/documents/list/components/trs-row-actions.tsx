@@ -7,6 +7,7 @@ import {
   Copy,
   Download,
   FilePenLine,
+  FilePlus2,
   FileSearch,
   FileText,
   FileType,
@@ -37,10 +38,17 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu'
 import {
+  canStartChildOf,
+  childrenOf,
+  nextChildTypeOf,
+} from '@/features/documents/data/chain'
+import { docTypeLabel } from '@/features/documents/data/doc-type'
+import {
   downloadTRWord,
   printTRToPdf,
 } from '@/features/documents/data/document-export'
 import { type TRItem } from '@/features/documents/data/schema'
+import { trs } from '@/features/documents/data/trs'
 
 type TRsRowActionsProps<TData> = {
   row: Row<TData>
@@ -51,6 +59,12 @@ export function TRsRowActions<TData>({ row }: TRsRowActionsProps<TData>) {
   const navigate = useNavigate()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const isApproved = tr.status === 'approved'
+
+  // Iniciar o proximo da cadeia (ETP a partir de DFD concluido, etc.) so quando
+  // o documento esta concluido e ainda nao tem filho.
+  const childType = nextChildTypeOf(tr)
+  const canStartChild =
+    canStartChildOf(tr) && childrenOf(tr.id, trs).length === 0
 
   return (
     <>
@@ -100,6 +114,19 @@ export function TRsRowActions<TData>({ row }: TRsRowActionsProps<TData>) {
               <Copy aria-hidden='true' className='size-4' />
               Duplicar
             </DropdownMenuItem>
+            {canStartChild && childType ? (
+              <DropdownMenuItem
+                onClick={() =>
+                  navigate({
+                    to: '/documentos/novo',
+                    search: { parentId: tr.id },
+                  })
+                }
+              >
+                <FilePlus2 aria-hidden='true' className='size-4' />
+                Iniciar {docTypeLabel(childType)}
+              </DropdownMenuItem>
+            ) : null}
           </DropdownMenuGroup>
 
           <DropdownMenuSeparator />
