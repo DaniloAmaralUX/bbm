@@ -31,6 +31,7 @@ import {
   trUnits,
 } from '@/features/documents/data/data'
 import { type TRItem } from '@/features/documents/data/schema'
+import { TRsCard } from './trs-card'
 import { trsColumns as columns } from './trs-columns'
 import { TRsEmptyState } from './trs-empty-state'
 
@@ -153,7 +154,8 @@ export function TRsTable({ data }: TRsTableProps) {
       />
       {hasRows ? (
         <>
-          <div className='overflow-x-auto rounded-md border'>
+          {/* Desktop (lg+): tabela. Abaixo de lg: cards, sem rolagem horizontal. */}
+          <div className='hidden overflow-x-auto rounded-md border lg:block'>
             <Table className='min-w-[1100px]'>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -202,6 +204,11 @@ export function TRsTable({ data }: TRsTableProps) {
                 ))}
               </TableBody>
             </Table>
+          </div>
+          <div className='grid gap-3 lg:hidden'>
+            {table.getRowModel().rows.map((row) => (
+              <TRsCard key={row.id} row={row} />
+            ))}
           </div>
           <DataTablePagination table={table} className='mt-auto' />
         </>
