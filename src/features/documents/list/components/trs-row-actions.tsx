@@ -164,10 +164,10 @@ export function TRsRowActions<TData>({ row }: TRsRowActionsProps<TData>) {
             </DropdownMenuSub>
             {!isApproved && (
               <DropdownMenuItem
-                onClick={() => toast.success(`${tr.id} aprovado`)}
+                onClick={() => toast.success(`${tr.id} concluído`)}
               >
                 <CheckCircle2 aria-hidden='true' className='size-4' />
-                Aprovar documento
+                Concluir documento
               </DropdownMenuItem>
             )}
           </DropdownMenuGroup>

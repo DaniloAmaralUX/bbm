@@ -140,7 +140,7 @@ export type KpiItem = {
   description?: string
 }
 
-/** KPIs de topo derivados do conjunto: total, rascunhos, aprovados e taxa de aprovação. */
+/** KPIs de topo derivados do conjunto: total, rascunhos, concluídos e taxa de conclusão. */
 export function buildKpis(items: TRItem[]): KpiItem[] {
   const total = items.length
   const drafts = items.filter((item) => item.status === 'draft').length
@@ -159,14 +159,14 @@ export function buildKpis(items: TRItem[]): KpiItem[] {
       description: 'Documentos iniciados e ainda em elaboração pelas áreas.',
     },
     {
-      label: 'Aprovados',
+      label: 'Concluídos',
       value: approved,
       description: 'Documentos prontos para seguir o fluxo de contratação.',
     },
     {
-      label: 'Taxa de aprovação',
+      label: 'Taxa de conclusão',
       value: percentFormatter.format(rate),
-      description: 'Documentos aprovados sobre o total cadastrado.',
+      description: 'Documentos concluídos sobre o total cadastrado.',
     },
   ]
 }
