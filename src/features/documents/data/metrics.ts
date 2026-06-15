@@ -1,4 +1,6 @@
+import { childrenOf, isConcluded } from './chain'
 import { type TRStatus, trStatusTokens } from './data'
+import { type DocType, docTypeLabel, docTypes } from './doc-type'
 import { type TRItem } from './schema'
 
 /**
@@ -75,6 +77,68 @@ export function recentDocuments(items: TRItem[], limit = 5): RecentDocument[] {
       status: item.status,
       updatedAt: dateFormatter.format(parseLocalDate(item.updatedAt)),
     }))
+}
+
+export type DocTypeCount = { docType: DocType; label: string; records: number }
+
+/** Conta documentos por tipo (DFD/ETP/TR), na ordem da cadeia. */
+export function countByDocType(items: TRItem[]): DocTypeCount[] {
+  return docTypes.map((docType) => ({
+    docType,
+    label: docTypeLabel(docType),
+    records: items.filter((item) => item.docType === docType).length,
+  }))
+}
+
+export type ChainFunnelStage = {
+  docType: DocType
+  label: string
+  count: number
+}
+
+export type ChainFunnel = {
+  /** Total de cadeias (cada DFD e a raiz de uma cadeia). */
+  totalChains: number
+  /** Etapas concluidas, monotonicas: DFD >= ETP >= TR. */
+  stages: ChainFunnelStage[]
+  /** Cadeias que chegaram a um TR aprovado. */
+  completedChains: number
+  /** completedChains / totalChains (0 quando nao ha cadeias). */
+  rate: number
+}
+
+/**
+ * Funil de conclusao da cadeia: para cada DFD (raiz), quantos concluiram o DFD,
+ * depois o ETP, depois o TR. A "taxa de conclusao" (RF-14) e a fracao de cadeias
+ * que chegaram a um TR aprovado.
+ */
+export function chainCompletion(items: TRItem[]): ChainFunnel {
+  const roots = items.filter((item) => item.docType === 'dfd')
+  let dfdDone = 0
+  let etpDone = 0
+  let trDone = 0
+
+  for (const root of roots) {
+    if (isConcluded(root)) dfdDone += 1
+    const etp = childrenOf(root.id, items).find((c) => c.docType === 'etp')
+    if (etp && isConcluded(etp)) {
+      etpDone += 1
+      const tr = childrenOf(etp.id, items).find((c) => c.docType === 'tr')
+      if (tr && isConcluded(tr)) trDone += 1
+    }
+  }
+
+  const totalChains = roots.length
+  return {
+    totalChains,
+    stages: [
+      { docType: 'dfd', label: 'DFD concluído', count: dfdDone },
+      { docType: 'etp', label: 'ETP concluído', count: etpDone },
+      { docType: 'tr', label: 'TR concluído', count: trDone },
+    ],
+    completedChains: trDone,
+    rate: totalChains === 0 ? 0 : trDone / totalChains,
+  }
 }
 
 export type KpiItem = {

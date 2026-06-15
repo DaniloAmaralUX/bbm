@@ -11,11 +11,19 @@ import {
   CardHeader,
 } from '@/shared/ui/card'
 import { SectionLabel } from '@/shared/components/section-label'
-import { recentTrs, trKpis, trStatusData, trUnitData } from '../data/app'
+import {
+  recentTrs,
+  trChainFunnel,
+  trDocTypeData,
+  trKpis,
+  trStatusData,
+  trUnitData,
+} from '../data/app'
+import { CategoryBarChart } from './components/category-bar-chart'
+import { TRChainFunnel } from './components/tr-chain-funnel'
 import { TRKpiCards } from './components/tr-kpi-cards'
 import { TRRecentList } from './components/tr-recent-list'
 import { TRStatusChart } from './components/tr-status-chart'
-import { TRUnitsChart } from './components/tr-units-chart'
 
 export function TRDashboard() {
   return (
@@ -66,17 +74,58 @@ export function TRDashboard() {
 
           <Card className='rounded-2xl border-0 shadow-border xl:col-span-2'>
             <CardHeader className='space-y-2'>
+              <SectionLabel>Documentos por tipo</SectionLabel>
+              <CardDescription className='text-pretty'>
+                Volume por tipo de documento da cadeia.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CategoryBarChart
+                data={trDocTypeData.map((item) => ({
+                  label: item.label,
+                  records: item.records,
+                }))}
+                noun='Tipo'
+                caption='Distribuição de documentos por tipo'
+                yAxisWidth={48}
+              />
+            </CardContent>
+          </Card>
+
+          <Card className='rounded-2xl border-0 shadow-border xl:col-span-2'>
+            <CardHeader className='space-y-2'>
               <SectionLabel>Documentos por unidade</SectionLabel>
               <CardDescription className='text-pretty'>
                 Volume de documentos em andamento por unidade.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <TRUnitsChart data={trUnitData.map((item) => ({ ...item }))} />
+              <CategoryBarChart
+                data={trUnitData.map((item) => ({
+                  label: item.unit,
+                  records: item.records,
+                }))}
+                noun='Unidade'
+                caption='Distribuição de documentos por unidade'
+              />
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className='grid gap-4 xl:grid-cols-6'>
+          <Card className='rounded-2xl border-0 shadow-border xl:col-span-3'>
+            <CardHeader className='space-y-2'>
+              <SectionLabel>Conclusão da cadeia</SectionLabel>
+              <CardDescription className='text-pretty'>
+                Cadeias que avançam de DFD a ETP e TR concluídos.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TRChainFunnel funnel={trChainFunnel} />
             </CardContent>
           </Card>
 
-          <Card className='rounded-2xl border-0 shadow-border xl:col-span-2'>
+          <Card className='rounded-2xl border-0 shadow-border xl:col-span-3'>
             <CardHeader className='space-y-2'>
               <SectionLabel>Documentos recentes</SectionLabel>
               <CardDescription className='text-pretty'>

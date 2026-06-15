@@ -6,13 +6,15 @@ import {
   ChartTooltipContent,
 } from '@/shared/ui/chart'
 
-type UnitsChartItem = {
-  unit: string
-  records: number
-}
+export type CategoryDatum = { label: string; records: number }
 
-type TRUnitsChartProps = {
-  data: UnitsChartItem[]
+type CategoryBarChartProps = {
+  data: CategoryDatum[]
+  /** Substantivo da categoria, para a legenda acessível (ex.: "unidade", "tipo"). */
+  noun: string
+  caption: string
+  /** Largura do eixo de rótulos; rótulos curtos (siglas) pedem menos. */
+  yAxisWidth?: number
 }
 
 const chartConfig: ChartConfig = {
@@ -22,15 +24,24 @@ const chartConfig: ChartConfig = {
   },
 }
 
-export function TRUnitsChart({ data }: TRUnitsChartProps) {
+/**
+ * Barra horizontal genérica de "documentos por categoria". Reaproveitada para a
+ * distribuição por unidade e por tipo de documento, evitando componentes avulsos
+ * duplicados. Cor por token (--primary); inclui tabela sr-only para leitores.
+ */
+export function CategoryBarChart({
+  data,
+  noun,
+  caption,
+  yAxisWidth = 88,
+}: CategoryBarChartProps) {
   const total = data.reduce((sum, item) => sum + item.records, 0)
-  const summary = data.map((item) => `${item.unit}: ${item.records}`).join(', ')
+  const summary = data
+    .map((item) => `${item.label}: ${item.records}`)
+    .join(', ')
 
   return (
-    <div
-      role='img'
-      aria-label={`Distribuição de documentos por unidade. Total: ${total}. ${summary}.`}
-    >
+    <div role='img' aria-label={`${caption}. Total: ${total}. ${summary}.`}>
       <ChartContainer config={chartConfig} className='h-[320px] w-full'>
         <BarChart
           data={data}
@@ -43,13 +54,14 @@ export function TRUnitsChart({ data }: TRUnitsChartProps) {
             fontSize={12}
             axisLine={false}
             tickLine={false}
+            allowDecimals={false}
           />
           <YAxis
             type='category'
-            dataKey='unit'
+            dataKey='label'
             stroke='var(--muted-foreground)'
             fontSize={12}
-            width={88}
+            width={yAxisWidth}
             axisLine={false}
             tickLine={false}
           />
@@ -79,17 +91,17 @@ export function TRUnitsChart({ data }: TRUnitsChartProps) {
       </ChartContainer>
       <div className='sr-only'>
         <table>
-          <caption>Distribuição de documentos por unidade</caption>
+          <caption>{caption}</caption>
           <thead>
             <tr>
-              <th scope='col'>Unidade</th>
+              <th scope='col'>{noun}</th>
               <th scope='col'>Quantidade</th>
             </tr>
           </thead>
           <tbody>
             {data.map((item) => (
-              <tr key={item.unit}>
-                <td>{item.unit}</td>
+              <tr key={item.label}>
+                <td>{item.label}</td>
                 <td>{item.records}</td>
               </tr>
             ))}

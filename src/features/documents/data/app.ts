@@ -1,5 +1,7 @@
 import {
   buildKpis,
+  chainCompletion,
+  countByDocType,
   countByStatus,
   countByUnit,
   recentDocuments,
@@ -26,4 +28,6 @@ export const currentUser = {
 export const trKpis = buildKpis(trs)
 export const trStatusData = countByStatus(trs)
 export const trUnitData = countByUnit(trs)
+export const trDocTypeData = countByDocType(trs)
+export const trChainFunnel = chainCompletion(trs)
 export const recentTrs = recentDocuments(trs, 5)
