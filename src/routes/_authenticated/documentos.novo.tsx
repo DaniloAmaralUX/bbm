@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
+import { RoleGuard } from '@/shared/components/role-guard'
 import { TRWizardPage } from '@/features/documents'
 
 export const Route = createFileRoute('/_authenticated/documentos/novo')({
@@ -12,5 +13,9 @@ export const Route = createFileRoute('/_authenticated/documentos/novo')({
 
 function RouteComponent() {
   const { duplicate, parentId } = Route.useSearch()
-  return <TRWizardPage duplicateFrom={duplicate} parentId={parentId} />
+  return (
+    <RoleGuard allow='requisitante'>
+      <TRWizardPage duplicateFrom={duplicate} parentId={parentId} />
+    </RoleGuard>
+  )
 }
