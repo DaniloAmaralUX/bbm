@@ -33,6 +33,9 @@ export const trSchema = z.object({
   updatedAt: z.string(),
   currentStep: z.string(),
   summary: z.string(),
+  // Vínculo de cadeia: id do documento ancestral (ETP aponta para seu DFD; TR
+  // para seu ETP). Ausente no DFD (raiz da cadeia) e em documentos avulsos.
+  parentId: z.string().optional(),
 })
 
 export type TRItem = z.infer<typeof trSchema>
