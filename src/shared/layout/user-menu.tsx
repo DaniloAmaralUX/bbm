@@ -6,8 +6,11 @@ import {
   Settings,
   Sun,
   UserCircle,
+  UserCog,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { type UserRole, roleLabels, userRoles } from '@/app/contexts/role'
+import { useRole } from '@/app/contexts/role-provider'
 import { useTheme } from '@/app/contexts/theme-provider'
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar'
 import {
@@ -51,6 +54,7 @@ export function UserMenu({
   email = 'ana.ribeiro@exemplo.gov.br',
 }: UserMenuProps) {
   const { theme, setTheme } = useTheme()
+  const { role, roleLabel, setRole } = useRole()
   const { isMobile } = useSidebar()
   const initials = getInitials(name)
 
@@ -98,6 +102,25 @@ export function UserMenu({
                 </div>
               </div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <UserCog aria-hidden='true' />
+                Papel: {roleLabel}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup
+                  value={role}
+                  onValueChange={(value) => setRole(value as UserRole)}
+                >
+                  {userRoles.map((value) => (
+                    <DropdownMenuRadioItem key={value} value={value}>
+                      {roleLabels[value]}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>

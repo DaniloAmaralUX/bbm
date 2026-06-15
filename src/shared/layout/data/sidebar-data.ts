@@ -32,11 +32,13 @@ export const sidebarData: SidebarData = {
           title: 'Modelos',
           url: '/modelos',
           icon: LayoutTemplate,
+          roles: ['sustentacao'],
         },
         {
           title: 'Novo documento',
           url: '/documentos/novo',
           icon: FilePlus2,
+          roles: ['requisitante'],
         },
       ],
     },
