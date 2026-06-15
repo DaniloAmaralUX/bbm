@@ -1,14 +1,22 @@
 import { useMemo } from 'react'
-import { CheckCircle2, FileText, PencilRuler, Pencil } from 'lucide-react'
-import { toast } from 'sonner'
+import { useNavigate } from '@tanstack/react-router'
+import { CheckCircle2, FileText, Pencil, PencilRuler, Plus } from 'lucide-react'
 import { Header } from '@/shared/layout/header'
 import { HeaderActions } from '@/shared/layout/header-actions'
 import { Main } from '@/shared/layout/main'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/shared/ui/dropdown-menu'
 import { SectionLabel } from '@/shared/components/section-label'
 import {
+  type DocType,
   docTypeFullLabel,
   docTypeLabel,
   docTypes,
@@ -39,6 +47,7 @@ function StateBadge({ state }: { state: ModelDefinition['state'] }) {
 }
 
 function ModelCard({ model }: { model: ModelDefinition }) {
+  const navigate = useNavigate()
   const fieldCount = Object.keys(model.fields).length
   const sectionCount = model.sections.filter(
     (section) => section.kind === 'fields'
@@ -82,7 +91,10 @@ function ModelCard({ model }: { model: ModelDefinition }) {
             size='sm'
             className='rounded-xl'
             onClick={() =>
-              toast('Edição de modelos chega no próximo passo da Fase 2.')
+              navigate({
+                to: '/modelos/$modelId',
+                params: { modelId: model.id },
+              })
             }
           >
             <PencilRuler aria-hidden='true' className='size-4' />
@@ -96,6 +108,8 @@ function ModelCard({ model }: { model: ModelDefinition }) {
 
 export function ModelsListPage() {
   const models = useModelsStore((state) => state.models)
+  const createDraftModel = useModelsStore((state) => state.createDraftModel)
+  const navigate = useNavigate()
   const groups = useMemo(
     () =>
       docTypes.map((docType) => ({
@@ -104,6 +118,11 @@ export function ModelsListPage() {
       })),
     [models]
   )
+
+  function handleCreate(docType: DocType) {
+    const id = createDraftModel(docType)
+    void navigate({ to: '/modelos/$modelId', params: { modelId: id } })
+  }
 
   return (
     <>
@@ -123,21 +142,32 @@ export function ModelsListPage() {
               documentos.
             </p>
           </div>
-          <Button
-            className='rounded-xl'
-            onClick={() =>
-              toast('Construtor de modelos: próximo passo da Fase 2.')
-            }
-          >
-            <PencilRuler aria-hidden='true' className='size-4' />
-            Novo modelo
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className='rounded-xl'>
+                <Plus aria-hidden='true' className='size-4' />
+                Novo modelo
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end' className='w-56'>
+              <DropdownMenuLabel>Tipo do documento</DropdownMenuLabel>
+              {docTypes.map((docType) => (
+                <DropdownMenuItem
+                  key={docType}
+                  onSelect={() => handleCreate(docType)}
+                >
+                  <FileText aria-hidden='true' className='size-4' />
+                  {docTypeLabel(docType)} - {docTypeFullLabel(docType)}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {groups.map((group) => (
           <section key={group.docType} className='space-y-3'>
             <SectionLabel>
-              {docTypeFullLabel(group.docType)} · {docTypeLabel(group.docType)}
+              {docTypeFullLabel(group.docType)} - {docTypeLabel(group.docType)}
             </SectionLabel>
             <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-3'>
               {group.items.map((model) => (

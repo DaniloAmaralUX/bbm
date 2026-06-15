@@ -11,9 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedModelosRouteImport } from './routes/_authenticated/modelos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedModelosIndexRouteImport } from './routes/_authenticated/modelos.index'
 import { Route as AuthenticatedDocumentosIndexRouteImport } from './routes/_authenticated/documentos.index'
+import { Route as AuthenticatedModelosModelIdRouteImport } from './routes/_authenticated/modelos.$modelId'
 import { Route as AuthenticatedDocumentosNovoRouteImport } from './routes/_authenticated/documentos.novo'
 import { Route as AuthenticatedDocumentosDocumentoIdRouteImport } from './routes/_authenticated/documentos.$documentoId'
 
@@ -26,20 +27,27 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedModelosRoute = AuthenticatedModelosRouteImport.update({
-  id: '/modelos',
-  path: '/modelos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedModelosIndexRoute =
+  AuthenticatedModelosIndexRouteImport.update({
+    id: '/modelos/',
+    path: '/modelos/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDocumentosIndexRoute =
   AuthenticatedDocumentosIndexRouteImport.update({
     id: '/documentos/',
     path: '/documentos/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedModelosModelIdRoute =
+  AuthenticatedModelosModelIdRouteImport.update({
+    id: '/modelos/$modelId',
+    path: '/modelos/$modelId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDocumentosNovoRoute =
@@ -58,55 +66,61 @@ const AuthenticatedDocumentosDocumentoIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/modelos': typeof AuthenticatedModelosRoute
   '/documentos/$documentoId': typeof AuthenticatedDocumentosDocumentoIdRoute
   '/documentos/novo': typeof AuthenticatedDocumentosNovoRoute
+  '/modelos/$modelId': typeof AuthenticatedModelosModelIdRoute
   '/documentos/': typeof AuthenticatedDocumentosIndexRoute
+  '/modelos/': typeof AuthenticatedModelosIndexRoute
 }
 export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/modelos': typeof AuthenticatedModelosRoute
   '/': typeof AuthenticatedIndexRoute
   '/documentos/$documentoId': typeof AuthenticatedDocumentosDocumentoIdRoute
   '/documentos/novo': typeof AuthenticatedDocumentosNovoRoute
+  '/modelos/$modelId': typeof AuthenticatedModelosModelIdRoute
   '/documentos': typeof AuthenticatedDocumentosIndexRoute
+  '/modelos': typeof AuthenticatedModelosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/modelos': typeof AuthenticatedModelosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/documentos/$documentoId': typeof AuthenticatedDocumentosDocumentoIdRoute
   '/_authenticated/documentos/novo': typeof AuthenticatedDocumentosNovoRoute
+  '/_authenticated/modelos/$modelId': typeof AuthenticatedModelosModelIdRoute
   '/_authenticated/documentos/': typeof AuthenticatedDocumentosIndexRoute
+  '/_authenticated/modelos/': typeof AuthenticatedModelosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/dashboard'
-    | '/modelos'
     | '/documentos/$documentoId'
     | '/documentos/novo'
+    | '/modelos/$modelId'
     | '/documentos/'
+    | '/modelos/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/dashboard'
-    | '/modelos'
     | '/'
     | '/documentos/$documentoId'
     | '/documentos/novo'
+    | '/modelos/$modelId'
     | '/documentos'
+    | '/modelos'
   id:
     | '__root__'
     | '/_authenticated'
     | '/_authenticated/dashboard'
-    | '/_authenticated/modelos'
     | '/_authenticated/'
     | '/_authenticated/documentos/$documentoId'
     | '/_authenticated/documentos/novo'
+    | '/_authenticated/modelos/$modelId'
     | '/_authenticated/documentos/'
+    | '/_authenticated/modelos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -129,13 +143,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/modelos': {
-      id: '/_authenticated/modelos'
-      path: '/modelos'
-      fullPath: '/modelos'
-      preLoaderRoute: typeof AuthenticatedModelosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -143,11 +150,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/modelos/': {
+      id: '/_authenticated/modelos/'
+      path: '/modelos'
+      fullPath: '/modelos/'
+      preLoaderRoute: typeof AuthenticatedModelosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/documentos/': {
       id: '/_authenticated/documentos/'
       path: '/documentos'
       fullPath: '/documentos/'
       preLoaderRoute: typeof AuthenticatedDocumentosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/modelos/$modelId': {
+      id: '/_authenticated/modelos/$modelId'
+      path: '/modelos/$modelId'
+      fullPath: '/modelos/$modelId'
+      preLoaderRoute: typeof AuthenticatedModelosModelIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/documentos/novo': {
@@ -169,21 +190,23 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedModelosRoute: typeof AuthenticatedModelosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedDocumentosDocumentoIdRoute: typeof AuthenticatedDocumentosDocumentoIdRoute
   AuthenticatedDocumentosNovoRoute: typeof AuthenticatedDocumentosNovoRoute
+  AuthenticatedModelosModelIdRoute: typeof AuthenticatedModelosModelIdRoute
   AuthenticatedDocumentosIndexRoute: typeof AuthenticatedDocumentosIndexRoute
+  AuthenticatedModelosIndexRoute: typeof AuthenticatedModelosIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedModelosRoute: AuthenticatedModelosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedDocumentosDocumentoIdRoute:
     AuthenticatedDocumentosDocumentoIdRoute,
   AuthenticatedDocumentosNovoRoute: AuthenticatedDocumentosNovoRoute,
+  AuthenticatedModelosModelIdRoute: AuthenticatedModelosModelIdRoute,
   AuthenticatedDocumentosIndexRoute: AuthenticatedDocumentosIndexRoute,
+  AuthenticatedModelosIndexRoute: AuthenticatedModelosIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
