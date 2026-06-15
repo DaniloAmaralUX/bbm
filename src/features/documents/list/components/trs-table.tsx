@@ -23,7 +23,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui/table'
-import { trNatures, trStatuses, trUnits } from '@/features/documents/data/data'
+import {
+  chainRoleOptions,
+  docTypeOptions,
+  trNatures,
+  trStatuses,
+  trUnits,
+} from '@/features/documents/data/data'
 import { type TRItem } from '@/features/documents/data/schema'
 import { trsColumns as columns } from './trs-columns'
 import { TRsEmptyState } from './trs-empty-state'
@@ -41,6 +47,7 @@ export function TRsTable({ data }: TRsTableProps) {
   // para não poluir a tabela. O usuário ativa via "Colunas" se quiser ver.
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     nature: false,
+    chainRole: false,
   })
 
   const {
@@ -57,9 +64,11 @@ export function TRsTable({ data }: TRsTableProps) {
     pagination: { defaultPage: 1, defaultPageSize: 10 },
     globalFilter: { enabled: true, key: 'filter' },
     columnFilters: [
+      { columnId: 'docType', searchKey: 'docType', type: 'array' },
       { columnId: 'status', searchKey: 'status', type: 'array' },
       { columnId: 'unit', searchKey: 'unit', type: 'array' },
       { columnId: 'nature', searchKey: 'nature', type: 'array' },
+      { columnId: 'chainRole', searchKey: 'chainRole', type: 'array' },
     ],
   })
 
@@ -116,6 +125,11 @@ export function TRsTable({ data }: TRsTableProps) {
         searchPlaceholder='Filtrar por título, ID ou responsável…'
         filters={[
           {
+            columnId: 'docType',
+            title: 'Tipo',
+            options: [...docTypeOptions],
+          },
+          {
             columnId: 'status',
             title: 'Status',
             options: [...trStatuses],
@@ -124,6 +138,11 @@ export function TRsTable({ data }: TRsTableProps) {
             columnId: 'unit',
             title: 'Unidade',
             options: [...trUnits],
+          },
+          {
+            columnId: 'chainRole',
+            title: 'Cadeia',
+            options: [...chainRoleOptions],
           },
           {
             columnId: 'nature',

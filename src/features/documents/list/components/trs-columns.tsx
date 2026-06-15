@@ -3,6 +3,7 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { DataTableColumnHeader } from '@/shared/data-table'
 import { Badge } from '@/shared/ui/badge'
 import { Checkbox } from '@/shared/ui/checkbox'
+import { chainRole, chainRoleLabels } from '@/features/documents/data/chain'
 import {
   trNatureLabels,
   trStatusBadgeClass,
@@ -66,6 +67,19 @@ export const trsColumns: ColumnDef<TRItem>[] = [
       </Badge>
     ),
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
+  },
+  {
+    // Coluna virtual de vínculo de cadeia: oculta por default, serve ao filtro
+    // facetado "Cadeia" (Início / Parte / Avulso).
+    id: 'chainRole',
+    accessorFn: (row) => chainRole(row),
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Cadeia' />
+    ),
+    meta: { title: 'Cadeia', className: 'ps-1', tdClassName: 'ps-4' },
+    cell: ({ row }) => chainRoleLabels[chainRole(row.original)],
+    filterFn: (row, id, value) => value.includes(row.getValue(id)),
+    enableSorting: false,
   },
   {
     accessorKey: 'title',

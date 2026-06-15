@@ -64,3 +64,25 @@ export function chainOf(item: TRItem, all: TRItem[]): TRItem[] {
     (a, b) => docTypes.indexOf(a.docType) - docTypes.indexOf(b.docType)
   )
 }
+
+/**
+ * Papel do documento quanto ao vínculo de cadeia, para filtro na listagem:
+ * - `root`: início de cadeia (todo DFD encabeça uma cadeia);
+ * - `linked`: parte da cadeia (ETP/TR com pai registrado);
+ * - `standalone`: avulso (ETP/TR sem vínculo de cadeia registrado).
+ */
+export type ChainRole = 'root' | 'linked' | 'standalone'
+
+export const chainRoleValues = ['root', 'linked', 'standalone'] as const
+
+export function chainRole(item: TRItem): ChainRole {
+  if (item.docType === 'dfd') return 'root'
+  if (item.parentId) return 'linked'
+  return 'standalone'
+}
+
+export const chainRoleLabels: Record<ChainRole, string> = {
+  root: 'Início de cadeia',
+  linked: 'Parte da cadeia',
+  standalone: 'Avulso',
+}

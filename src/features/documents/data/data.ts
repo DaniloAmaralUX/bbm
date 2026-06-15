@@ -1,4 +1,14 @@
-import { ArrowRight, CheckCircle2, Circle } from 'lucide-react'
+import {
+  ArrowRight,
+  CheckCircle2,
+  Circle,
+  FileText,
+  GitBranch,
+  Link2,
+  Minus,
+} from 'lucide-react'
+import { type ChainRole, chainRoleLabels, chainRoleValues } from './chain'
+import { type DocType, docTypeLabel, docTypes } from './doc-type'
 
 export const trStatuses = [
   {
@@ -103,3 +113,34 @@ export type TRNature = (typeof trNatures)[number]['value']
 export const trNatureLabels: Record<TRNature, string> = Object.fromEntries(
   trNatures.map((n) => [n.value, n.label])
 ) as Record<TRNature, string>
+
+// Opções de filtro por tipo de documento (faceta da listagem).
+export const docTypeOptions: {
+  label: string
+  value: DocType
+  icon: React.ComponentType<{ className?: string }>
+}[] = docTypes.map((docType) => ({
+  label: docTypeLabel(docType),
+  value: docType,
+  icon: FileText,
+}))
+
+// Opções de filtro por vínculo de cadeia (faceta da listagem).
+const chainRoleIcons: Record<
+  ChainRole,
+  React.ComponentType<{ className?: string }>
+> = {
+  root: GitBranch,
+  linked: Link2,
+  standalone: Minus,
+}
+
+export const chainRoleOptions: {
+  label: string
+  value: ChainRole
+  icon: React.ComponentType<{ className?: string }>
+}[] = chainRoleValues.map((value) => ({
+  label: chainRoleLabels[value],
+  value,
+  icon: chainRoleIcons[value],
+}))
