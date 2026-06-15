@@ -30,10 +30,21 @@ export type SectionDefinition = {
   fieldIds?: string[]
 }
 
+/** Estado de publicação de um modelo (Fase 2 - construtor de modelos). */
+export type ModelState = 'draft' | 'published'
+
 export type ModelDefinition = {
+  /** Id único do modelo (há vários modelos por DocType). */
+  id: string
   docType: DocType
+  /** Nome do modelo dado pela Sustentação (ex.: "DFD de aquisição"). */
+  name: string
+  /** Rótulo do tipo de documento (DFD/ETP/TR por extenso). */
   label: string
   intro: string
+  state: ModelState
+  version: number
+  updatedAt: string
   fields: Record<string, FieldDefinition>
   sections: SectionDefinition[]
 }
@@ -171,10 +182,15 @@ const commonFields: Record<string, FieldDefinition> = {
 // modelos editável pela UI é a Fase 2). ---
 
 const dfdModel: ModelDefinition = {
+  id: 'model-dfd-padrao',
   docType: 'dfd',
+  name: 'Modelo padrão de DFD',
   label: docTypeFullLabel('dfd'),
   intro:
     'Documento inaugural da cadeia: formaliza a necessidade da contratação.',
+  state: 'published',
+  version: 1,
+  updatedAt: '2026-06-01',
   fields: markInheritableFields({
     requestingUnit: commonFields.requestingUnit,
     responsible: commonFields.responsible,
@@ -222,10 +238,15 @@ const dfdModel: ModelDefinition = {
 }
 
 const etpModel: ModelDefinition = {
+  id: 'model-etp-padrao',
   docType: 'etp',
+  name: 'Modelo padrão de ETP',
   label: docTypeFullLabel('etp'),
   intro:
     'Estudo que avalia o problema, alternativas e viabilidade técnica e econômica.',
+  state: 'published',
+  version: 1,
+  updatedAt: '2026-06-01',
   fields: markInheritableFields({
     object: commonFields.object,
     justification: commonFields.justification,
@@ -331,10 +352,15 @@ const etpModel: ModelDefinition = {
 }
 
 const trModel: ModelDefinition = {
+  id: 'model-tr-padrao',
   docType: 'tr',
+  name: 'Modelo padrão de TR',
   label: docTypeFullLabel('tr'),
   intro:
     'Detalha a solução escolhida: requisitos, execução, medição e itens da contratação.',
+  state: 'published',
+  version: 1,
+  updatedAt: '2026-06-01',
   fields: markInheritableFields({
     object: commonFields.object,
     solution: commonFields.solution,
@@ -423,15 +449,19 @@ const trModel: ModelDefinition = {
   ],
 }
 
-export const modelDefinitions: Record<DocType, ModelDefinition> = {
+/**
+ * Modelos padrão da Fase 1, agora usados como SEED da store de modelos
+ * (Fase 2). A Sustentação pode criar outros modelos por tipo; o accessor
+ * `getModelForDocType` vive em `@/features/models` e le da store publicada.
+ */
+export const standardModelByType: Record<DocType, ModelDefinition> = {
   dfd: dfdModel,
   etp: etpModel,
   tr: trModel,
 }
 
-export function getModelForDocType(docType: DocType): ModelDefinition {
-  return modelDefinitions[docType]
-}
+export const standardModels: ModelDefinition[] =
+  Object.values(standardModelByType)
 
 export function getResponsibleUnitOptions() {
   return unitOptions

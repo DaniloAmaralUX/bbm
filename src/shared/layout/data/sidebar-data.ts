@@ -1,4 +1,9 @@
-import { FilePlus2, FileText, LayoutDashboard } from 'lucide-react'
+import {
+  FilePlus2,
+  FileText,
+  LayoutDashboard,
+  LayoutTemplate,
+} from 'lucide-react'
 import { appIdentity, currentUser } from '@/features/documents/data/app'
 import { type SidebarData } from '../types'
 
@@ -22,6 +27,11 @@ export const sidebarData: SidebarData = {
           title: 'Documentos',
           url: '/documentos',
           icon: FileText,
+        },
+        {
+          title: 'Modelos',
+          url: '/modelos',
+          icon: LayoutTemplate,
         },
         {
           title: 'Novo documento',

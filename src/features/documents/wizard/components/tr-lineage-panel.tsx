@@ -12,7 +12,7 @@ import {
   type DocumentCells,
   type FieldOrigin,
 } from '@/features/documents/data/inheritance'
-import { getModelForDocType } from '@/features/documents/data/templates'
+import { getModelForDocType } from '@/features/models/store/use-models-store'
 
 type LineageRow = {
   fieldId: string

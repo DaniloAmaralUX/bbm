@@ -3,10 +3,8 @@ import {
   docTypes,
   parentOf,
 } from '@/features/documents/data/doc-type'
-import {
-  type FieldDefinition,
-  getModelForDocType,
-} from '@/features/documents/data/templates'
+import { type FieldDefinition } from '@/features/documents/data/templates'
+import { getModelForDocType } from '@/features/models/store/use-models-store'
 
 /**
  * Origem do valor de um campo na cadeia DFD -> ETP -> TR.

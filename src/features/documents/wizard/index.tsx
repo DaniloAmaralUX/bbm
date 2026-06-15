@@ -56,9 +56,9 @@ import {
   type FieldDefinition,
   type SectionDefinition,
   buildReviewState,
-  getModelForDocType,
 } from '@/features/documents/data/templates'
 import { trs } from '@/features/documents/data/trs'
+import { getModelForDocType } from '@/features/models/store/use-models-store'
 import { TRAIAssistant } from './components/tr-ai-assistant'
 import { TRLineagePanel } from './components/tr-lineage-panel'
 import { TRStepper } from './components/tr-stepper'

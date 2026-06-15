@@ -24,16 +24,14 @@ import {
 import { ScrollArea } from '@/shared/ui/scroll-area'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { docTypeLabel } from '@/features/documents/data/doc-type'
-import {
-  getModelForDocType,
-  type FieldDefinition,
-} from '@/features/documents/data/templates'
+import { type FieldDefinition } from '@/features/documents/data/templates'
 import {
   type TRAssistantAction,
   getFieldSupport,
   trAssistantActionDescriptions,
   trAssistantActionLabels,
 } from '@/features/documents/data/tr-assistant'
+import { getModelForDocType } from '@/features/models/store/use-models-store'
 import { useTRWizard } from '../store/use-tr-wizard'
 
 const actionIcons: Record<

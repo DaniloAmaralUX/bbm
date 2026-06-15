@@ -13,7 +13,6 @@ import {
 import {
   type DocumentData,
   buildReviewState,
-  getModelForDocType,
 } from '@/features/documents/data/templates'
 import {
   type TRAssistantAction,
@@ -22,6 +21,7 @@ import {
   createInitialAssistantState,
   generateAssistantSuggestion,
 } from '@/features/documents/data/tr-assistant'
+import { getModelForDocType } from '@/features/models/store/use-models-store'
 import {
   createInitialTRWizardData,
   type TRWizardContext,
