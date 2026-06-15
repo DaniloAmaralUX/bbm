@@ -1,15 +1,16 @@
 import { type DocType } from '@/features/documents/data/doc-type'
 import {
-  type DocumentData,
-  type ModelDefinition,
-  type ReviewState,
-  buildReviewState,
-  createDocumentData,
-  getModelForDocType,
-} from '@/features/documents/data/templates'
+  type ChainState,
+  createInitialChainState,
+} from '@/features/documents/data/inheritance'
 
 export type TRWizardSubmissionStatus = 'editing' | 'submitting' | 'completed'
 
+/**
+ * Contexto editorial da cadeia (vale para todos os documentos). O `docType`
+ * agora e derivado de `chain.current`; aqui ficam so os metadados comuns que
+ * acompanham a jornada e aparecem na revisao.
+ */
 export type TRWizardContext = {
   docType: DocType
   title: string
@@ -18,54 +19,35 @@ export type TRWizardContext = {
 }
 
 export type TRWizardData = {
-  currentStep: number
+  /** Estado da cadeia DFD -> ETP -> TR em memoria. */
+  chain: ChainState
   submission: {
     status: TRWizardSubmissionStatus
     savedAt: string
     completedAt: string
   }
   context: TRWizardContext
-  documentData: DocumentData
-  reviewState: ReviewState
   isDirty: boolean
 }
 
-export function getCurrentTemplate(context: TRWizardContext): ModelDefinition {
-  return getModelForDocType(context.docType)
-}
-
 export function createInitialTRWizardData(): TRWizardData {
-  const docType: DocType = 'dfd'
-  const model = getModelForDocType(docType)
+  const chain = createInitialChainState()
 
   const context: TRWizardContext = {
-    docType,
+    docType: chain.current,
     title: 'Aquisição de mobiliário para as unidades de atendimento',
     responsibleUnit: 'Secretaria de Administração',
     referenceCode: 'DFD-2026-021',
   }
 
-  const documentData = createDocumentData(model, {
-    requestingUnit: 'Secretaria de Administração',
-    responsible: 'Ana Ribeiro',
-    object:
-      'Aquisição de mobiliário corporativo para reequipar as unidades de atendimento ao público, com entrega e montagem inclusas.',
-    justification:
-      'O mobiliário atual está depreciado e compromete a ergonomia e o atendimento. A renovação melhora as condições de trabalho e a experiência do cidadão.',
-    expectedDate: '30/06/2026',
-    pcaLink: 'Item 12/2026 do Plano de Contratações Anual',
-  })
-
   return {
-    currentStep: 0,
+    chain,
     submission: {
       status: 'editing',
       savedAt: '',
       completedAt: '',
     },
     context,
-    documentData,
-    reviewState: buildReviewState(context, model, documentData),
     isDirty: false,
   }
 }

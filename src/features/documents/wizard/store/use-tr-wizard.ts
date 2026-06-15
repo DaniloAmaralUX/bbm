@@ -1,11 +1,19 @@
 import { create } from 'zustand'
 import { type DocType } from '@/features/documents/data/doc-type'
 import {
+  type ChainState,
+  type DocumentCells,
+  cellsToDocumentData,
+  concludeDocument,
+  inheritCommonFields,
+  isDocumentLocked,
+  revertCellToInherited,
+  setCellValue,
+} from '@/features/documents/data/inheritance'
+import {
   type DocumentData,
   buildReviewState,
-  createDocumentData,
   getModelForDocType,
-  hasMeaningfulData,
 } from '@/features/documents/data/templates'
 import {
   type TRAssistantAction,
@@ -22,87 +30,86 @@ import {
 
 type TRWizardState = TRWizardData & {
   assistant: TRAssistantState
-  nextStep: () => void
-  prevStep: () => void
-  goToStep: (step: number) => void
+  /** Cadeia atual (atalho para `chain.current`). */
+  goToDoc: (docType: DocType) => void
   updateContext: (values: Partial<Omit<TRWizardContext, 'docType'>>) => void
-  changeDocType: (docType: DocType) => void
   setFieldValue: (fieldId: string, value: string) => void
+  revertField: (fieldId: string) => void
+  concludeCurrent: () => void
   setAssistantTarget: (target: TRAssistantTarget | null) => void
   requestAssistantSuggestion: (action: TRAssistantAction) => void
   applyAssistantSuggestion: (options?: { allowOverwrite?: boolean }) => boolean
   discardAssistantSuggestion: () => void
   saveDraft: () => void
-  startSubmission: () => void
-  completeSubmission: () => void
   seedFromDuplicate: (source: {
     id: string
     title: string
     unit: string
   }) => void
   reset: () => void
-  hasCustomData: () => boolean
+  /** Celulas do documento corrente. */
+  currentCells: () => DocumentCells
+  /** `DocumentData` plano do documento corrente (para IA e validacao). */
+  currentDocumentData: () => DocumentData
 }
 
-function syncState(
+/** Deriva o contexto com `docType` sincronizado ao documento corrente da cadeia. */
+function contextForChain(
   context: TRWizardContext,
-  documentData: DocumentData,
-  partial?: Partial<TRWizardData>
-) {
-  const model = getModelForDocType(context.docType)
-  return {
-    ...partial,
-    context,
-    documentData,
-    reviewState: buildReviewState(context, model, documentData),
-  }
-}
-
-function clampStep(step: number, context: TRWizardContext) {
-  const model = getModelForDocType(context.docType)
-  return Math.max(0, Math.min(step, model.sections.length))
+  chain: ChainState
+): TRWizardContext {
+  if (context.docType === chain.current) return context
+  return { ...context, docType: chain.current }
 }
 
 export const useTRWizard = create<TRWizardState>()((set, get) => ({
   ...createInitialTRWizardData(),
   assistant: createInitialAssistantState(),
-  nextStep: () =>
-    set((state) => ({
-      currentStep: clampStep(state.currentStep + 1, state.context),
-    })),
-  prevStep: () =>
-    set((state) => ({
-      currentStep: clampStep(state.currentStep - 1, state.context),
-    })),
-  goToStep: (step) =>
-    set((state) => ({
-      currentStep: clampStep(step, state.context),
-    })),
+  goToDoc: (docType) =>
+    set((state) => {
+      if (isDocumentLocked(state.chain, docType)) return {}
+      // Sincroniza a heranca ao entrar (campos comuns refletem ancestrais).
+      const chain = inheritCommonFields(
+        { ...state.chain, current: docType },
+        docType
+      )
+      return { chain, context: contextForChain(state.context, chain) }
+    }),
   updateContext: (values) =>
-    set((state) => {
-      const context = { ...state.context, ...values }
-      return {
-        ...syncState(context, state.documentData),
-        isDirty: true,
-      }
-    }),
-  changeDocType: (docType) =>
-    set((state) => {
-      const context = { ...state.context, docType }
-      const model = getModelForDocType(docType)
-      const documentData = createDocumentData(model, state.documentData)
-      return {
-        ...syncState(context, documentData),
-        currentStep: clampStep(0, context),
-        isDirty: true,
-      }
-    }),
+    set((state) => ({
+      context: { ...state.context, ...values, docType: state.chain.current },
+      isDirty: true,
+    })),
   setFieldValue: (fieldId, value) =>
     set((state) => {
-      const documentData = { ...state.documentData, [fieldId]: value }
+      const current = state.chain.current
+      if (state.chain.done[current]) return {}
+      const chain = setCellValue(state.chain, current, fieldId, value)
+      return { chain, isDirty: true }
+    }),
+  revertField: (fieldId) =>
+    set((state) => {
+      const current = state.chain.current
+      if (state.chain.done[current]) return {}
+      const chain = revertCellToInherited(state.chain, current, fieldId)
+      return { chain, isDirty: true }
+    }),
+  concludeCurrent: () =>
+    set((state) => {
+      const current = state.chain.current
+      if (state.chain.done[current]) return {}
+      const chain = concludeDocument(state.chain, current)
       return {
-        ...syncState(state.context, documentData),
-        isDirty: true,
+        chain,
+        submission: {
+          ...state.submission,
+          status: 'completed' as const,
+          completedAt: new Intl.DateTimeFormat('pt-BR', {
+            dateStyle: 'short',
+            timeStyle: 'short',
+          }).format(new Date()),
+        },
+        isDirty: false,
       }
     }),
   setAssistantTarget: (target) =>
@@ -133,18 +140,16 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
       })
       return
     }
-    const model = getModelForDocType(state.context.docType)
-    const sectionForTarget = model.sections.find(
+    const model = getModelForDocType(state.chain.current)
+    const currentSection = model.sections.find(
       (section) => section.id === target.sectionId
     )
-    const currentSection =
-      sectionForTarget ?? model.sections[state.currentStep - 1]
     if (!currentSection || currentSection.kind !== 'fields') {
       set({
         assistant: {
           ...state.assistant,
           status: 'error',
-          error: 'A assistência está disponível apenas em etapas de texto.',
+          error: 'A assistência está disponível apenas em campos de texto.',
         },
       })
       return
@@ -173,7 +178,7 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
         template: model,
         currentSection,
         fieldId: target.fieldId,
-        documentData: next.documentData,
+        documentData: next.currentDocumentData(),
         action,
       })
       if (!suggestion) {
@@ -201,7 +206,11 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
     const state = get()
     const { suggestion } = state.assistant
     if (!suggestion) return false
-    const currentValue = String(state.documentData[suggestion.fieldId] ?? '')
+    const current = state.chain.current
+    if (state.chain.done[current]) return false
+    const currentValue = String(
+      state.chain.cells[current]?.[suggestion.fieldId]?.value ?? ''
+    )
     if (currentValue.trim().length > 0 && !allowOverwrite) {
       set({
         assistant: {
@@ -213,12 +222,14 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
       })
       return false
     }
-    const documentData = {
-      ...state.documentData,
-      [suggestion.fieldId]: suggestion.content,
-    }
+    const chain = setCellValue(
+      state.chain,
+      current,
+      suggestion.fieldId,
+      suggestion.content
+    )
     set({
-      ...syncState(state.context, documentData),
+      chain,
       isDirty: true,
       assistant: {
         ...state.assistant,
@@ -249,61 +260,43 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
       },
       isDirty: false,
     })),
-  startSubmission: () =>
-    set((state) => ({
-      submission: {
-        ...state.submission,
-        status: 'submitting',
-        completedAt: '',
-      },
-    })),
-  completeSubmission: () =>
-    set((state) => ({
-      submission: {
-        ...state.submission,
-        status: 'completed',
-        completedAt: new Intl.DateTimeFormat('pt-BR', {
-          dateStyle: 'short',
-          timeStyle: 'short',
-        }).format(new Date()),
-      },
-      isDirty: false,
-    })),
   seedFromDuplicate: (source) =>
-    set((state) => {
-      // Protótipo: os documentos da lista são registros-resumo (não guardam o
-      // documentData completo). Carregamos os metadados disponíveis (título
-      // como "Cópia de…", unidade) e mantemos o documentData/modelo atual
-      // como base editável. Cópia campo-a-campo fiel exige backend.
-      const context = {
+    set((state) => ({
+      context: {
         ...state.context,
         title: `Cópia de ${source.title}`,
         responsibleUnit: source.unit,
-      }
-      return {
-        ...syncState(context, state.documentData),
-        currentStep: 0,
-        submission: {
-          status: 'editing' as const,
-          savedAt: '',
-          completedAt: '',
-        },
-        isDirty: false,
-      }
-    }),
+        docType: state.chain.current,
+      },
+      submission: {
+        status: 'editing' as const,
+        savedAt: '',
+        completedAt: '',
+      },
+      isDirty: false,
+    })),
   reset: () =>
     set({
       ...createInitialTRWizardData(),
       assistant: createInitialAssistantState(),
     }),
-  hasCustomData: () => {
+  currentCells: () => {
     const state = get()
-    return (
-      state.isDirty ||
-      hasMeaningfulData(state.documentData) ||
-      state.context.title.trim() !== '' ||
-      state.context.responsibleUnit.trim() !== '' ||
-      state.context.referenceCode.trim() !== ''
-    )
+    return state.chain.cells[state.chain.current]
+  },
+  currentDocumentData: () => {
+    const state = get()
+    return cellsToDocumentData(state.chain.cells[state.chain.current])
   },
 }))
+
+/** Estado de revisao do documento corrente, derivado das celulas atuais. */
+export function selectReviewState(state: TRWizardState) {
+  const model = getModelForDocType(state.chain.current)
+  const documentData = cellsToDocumentData(state.chain.cells[state.chain.current])
+  return buildReviewState(
+    { title: state.context.title, responsibleUnit: state.context.responsibleUnit },
+    model,
+    documentData
+  )
+}

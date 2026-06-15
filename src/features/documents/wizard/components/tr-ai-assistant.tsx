@@ -53,7 +53,9 @@ const actionOrder: TRAssistantAction[] = ['suggest', 'expand', 'rewrite']
 export function TRAIAssistant() {
   const assistant = useTRWizard((state) => state.assistant)
   const context = useTRWizard((state) => state.context)
-  const documentData = useTRWizard((state) => state.documentData)
+  const currentCells = useTRWizard(
+    (state) => state.chain.cells[state.chain.current]
+  )
   const requestAssistantSuggestion = useTRWizard(
     (state) => state.requestAssistantSuggestion
   )
@@ -79,7 +81,7 @@ export function TRAIAssistant() {
   const familyLabel = docTypeLabel(context.docType)
 
   const currentValue = target
-    ? String(documentData[target.fieldId] ?? '')
+    ? String(currentCells?.[target.fieldId]?.value ?? '')
     : ''
   const hasContent = currentValue.trim().length > 0
   const isGenerating = assistant.status === 'generating'

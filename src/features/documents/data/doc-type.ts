@@ -35,3 +35,19 @@ export function docTypeLabel(type: DocType): string {
 export function docTypeFullLabel(type: DocType): string {
   return docTypeFullLabels[type]
 }
+
+/**
+ * Tipo do documento ancestral (pai) na cadeia: o ETP herda do DFD e o TR herda
+ * do ETP. Modela explicitamente a relação `parentId` da cadeia em memória; a
+ * herança sobe por esta relação ate achar um ancestral com valor.
+ */
+const parentByType: Record<DocType, DocType | null> = {
+  dfd: null,
+  etp: 'dfd',
+  tr: 'etp',
+}
+
+/** Tipo ancestral imediato na cadeia, ou `null` para o documento inicial (DFD). */
+export function parentOf(type: DocType): DocType | null {
+  return parentByType[type]
+}

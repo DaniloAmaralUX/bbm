@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { getModelForDocType } from '@/features/documents/data/templates'
+import { docTypeLabel } from '@/features/documents/data/doc-type'
 import { useTRWizard } from '@/features/documents/wizard/store/use-tr-wizard'
 import {
   Breadcrumb,
@@ -43,16 +43,10 @@ function buildCrumbs(pathname: string): Crumb[] {
 }
 
 function useWizardStepLabel(active: boolean): string | null {
-  const currentStep = useTRWizard((state) => (active ? state.currentStep : 0))
-  const docType = useTRWizard((state) =>
-    active ? state.context.docType : null
-  )
-
+  // A "etapa" do wizard agora e o tipo de documento corrente da cadeia.
+  const docType = useTRWizard((state) => (active ? state.chain.current : null))
   if (!active || !docType) return null
-  if (currentStep === 0) return 'Configuração do Modelo'
-
-  const model = getModelForDocType(docType)
-  return model.sections[currentStep - 1]?.title ?? null
+  return docTypeLabel(docType)
 }
 
 export function RouteBreadcrumb() {
