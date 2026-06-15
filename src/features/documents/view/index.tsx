@@ -48,7 +48,7 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
           >
             <FilePenLine aria-hidden='true' className='size-4' />
             <AlertDescription>
-              Modo de edição — alterações salvas automaticamente como rascunho.
+              Modo de edição: alterações salvas automaticamente como rascunho.
             </AlertDescription>
           </Alert>
         )}

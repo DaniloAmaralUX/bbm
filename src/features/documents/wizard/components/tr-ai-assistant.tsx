@@ -96,7 +96,7 @@ export function TRAIAssistant() {
       return
     }
     if (action === 'rewrite' && !hasContent) {
-      toast.error('Não há texto para reescrever — use "Sugerir" primeiro.')
+      toast.error('Não há texto para reescrever. Use "Sugerir" primeiro.')
       return
     }
     requestAssistantSuggestion(action)
@@ -283,7 +283,7 @@ export function TRAIAssistant() {
             <AlertDialogTitle>Substituir o texto atual?</AlertDialogTitle>
             <AlertDialogDescription>
               O campo já tem conteúdo. Aplicar a sugestão vai sobrescrever o
-              texto existente — essa ação não pode ser desfeita
+              texto existente, e essa ação não pode ser desfeita
               automaticamente.
             </AlertDialogDescription>
           </AlertDialogHeader>

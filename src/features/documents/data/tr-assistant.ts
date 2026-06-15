@@ -270,7 +270,7 @@ const sesiRecipes: Record<string, FieldRecipe> = {
       title: 'Especificações técnicas',
       content:
         'As especificações técnicas dos itens estão detalhadas na matriz de lotes deste TR, incluindo unidade de medida, quantidade total, condições de entrega, garantia mínima e demais critérios técnicos exigidos pelo SESI.',
-      note: 'A matriz de lotes complementa este campo — preencha o step "Lotes" para consolidar.',
+      note: 'A matriz de lotes complementa este campo. Preencha o step "Lotes" para consolidar.',
     },
     rewrite: {
       title: 'Especificações reescritas',

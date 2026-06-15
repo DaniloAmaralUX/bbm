@@ -207,7 +207,7 @@ export function buildDocumentHtml(trId: string): {
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<title>${escapeHtml(doc.id)} — ${escapeHtml(doc.title)}</title>
+<title>${escapeHtml(doc.id)} - ${escapeHtml(doc.title)}</title>
 <style>${documentStyles}</style>
 </head>
 <body>
