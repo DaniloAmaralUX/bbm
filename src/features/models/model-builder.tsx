@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Check, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Check, Eye, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Header } from '@/shared/layout/header'
 import { HeaderActions } from '@/shared/layout/header-actions'
 import { Main } from '@/shared/layout/main'
@@ -25,6 +26,7 @@ import {
   type ModelDefinition,
   type SectionDefinition,
 } from '@/features/documents/data/templates'
+import { ModelPreview } from './model-preview'
 import { useModelsStore } from './store/use-models-store'
 
 const inputTypeLabels: Record<FieldInputType, string> = {
@@ -291,6 +293,7 @@ export function ModelBuilderPage({ modelId }: { modelId: string }) {
   const updateModelMeta = useModelsStore((state) => state.updateModelMeta)
   const addSection = useModelsStore((state) => state.addSection)
   const navigate = useNavigate()
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit')
 
   if (!model) {
     return (
@@ -327,70 +330,110 @@ export function ModelBuilderPage({ modelId }: { modelId: string }) {
               Voltar para Modelos
             </Link>
           </Button>
-          <span className='inline-flex items-center gap-1.5 text-sm text-muted-foreground'>
-            <Check aria-hidden='true' className='size-4 text-primary' />
-            Rascunho salvo automaticamente
-          </span>
-        </div>
-
-        <Card className='rounded-2xl border-0 shadow-border'>
-          <CardContent className='grid gap-4 p-6'>
-            <div className='flex flex-wrap items-center gap-2'>
-              <Badge variant='outline' className='font-medium'>
-                {docTypeLabel(model.docType)}
-              </Badge>
-              <Badge variant='outline' className='gap-1'>
-                {model.state === 'published' ? 'Publicado' : 'Rascunho'}
-              </Badge>
+          <div className='flex flex-wrap items-center gap-3'>
+            <div className='inline-flex items-center rounded-xl border border-border/60 p-0.5'>
+              <Button
+                type='button'
+                variant={mode === 'edit' ? 'secondary' : 'ghost'}
+                size='sm'
+                className='rounded-lg'
+                aria-pressed={mode === 'edit'}
+                onClick={() => setMode('edit')}
+              >
+                <Pencil aria-hidden='true' className='size-4' />
+                Editor
+              </Button>
+              <Button
+                type='button'
+                variant={mode === 'preview' ? 'secondary' : 'ghost'}
+                size='sm'
+                className='rounded-lg'
+                aria-pressed={mode === 'preview'}
+                onClick={() => setMode('preview')}
+              >
+                <Eye aria-hidden='true' className='size-4' />
+                Pré-visualização
+              </Button>
             </div>
-            <Field>
-              <FieldLabel htmlFor='model-name'>Nome do modelo</FieldLabel>
-              <Input
-                id='model-name'
-                value={model.name}
-                onChange={(event) =>
-                  updateModelMeta(model.id, { name: event.target.value })
-                }
-                placeholder='Ex.: DFD de aquisição de bens'
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor='model-intro'>Descrição do modelo</FieldLabel>
-              <Textarea
-                id='model-intro'
-                value={model.intro}
-                onChange={(event) =>
-                  updateModelMeta(model.id, { intro: event.target.value })
-                }
-                placeholder='Para que serve este modelo e quando usá-lo'
-              />
-            </Field>
-          </CardContent>
-        </Card>
-
-        {model.sections
-          .filter((section) => section.kind === 'fields')
-          .map((section) => (
-            <SectionEditor key={section.id} model={model} section={section} />
-          ))}
-
-        <div className='flex flex-wrap gap-2'>
-          <Button
-            variant='outline'
-            className='rounded-xl'
-            onClick={() => addSection(model.id)}
-          >
-            <Plus aria-hidden='true' className='size-4' />
-            Adicionar seção
-          </Button>
-          <Button
-            className='rounded-xl'
-            onClick={() => navigate({ to: '/modelos' })}
-          >
-            <Check aria-hidden='true' className='size-4' />
-            Concluir edição
-          </Button>
+            {mode === 'edit' ? (
+              <span className='inline-flex items-center gap-1.5 text-sm text-muted-foreground'>
+                <Check aria-hidden='true' className='size-4 text-primary' />
+                Rascunho salvo automaticamente
+              </span>
+            ) : null}
+          </div>
         </div>
+
+        {mode === 'preview' ? (
+          <ModelPreview model={model} />
+        ) : (
+          <>
+            <Card className='rounded-2xl border-0 shadow-border'>
+              <CardContent className='grid gap-4 p-6'>
+                <div className='flex flex-wrap items-center gap-2'>
+                  <Badge variant='outline' className='font-medium'>
+                    {docTypeLabel(model.docType)}
+                  </Badge>
+                  <Badge variant='outline' className='gap-1'>
+                    {model.state === 'published' ? 'Publicado' : 'Rascunho'}
+                  </Badge>
+                </div>
+                <Field>
+                  <FieldLabel htmlFor='model-name'>Nome do modelo</FieldLabel>
+                  <Input
+                    id='model-name'
+                    value={model.name}
+                    onChange={(event) =>
+                      updateModelMeta(model.id, { name: event.target.value })
+                    }
+                    placeholder='Ex.: DFD de aquisição de bens'
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor='model-intro'>
+                    Descrição do modelo
+                  </FieldLabel>
+                  <Textarea
+                    id='model-intro'
+                    value={model.intro}
+                    onChange={(event) =>
+                      updateModelMeta(model.id, { intro: event.target.value })
+                    }
+                    placeholder='Para que serve este modelo e quando usá-lo'
+                  />
+                </Field>
+              </CardContent>
+            </Card>
+
+            {model.sections
+              .filter((section) => section.kind === 'fields')
+              .map((section) => (
+                <SectionEditor
+                  key={section.id}
+                  model={model}
+                  section={section}
+                />
+              ))}
+
+            <div className='flex flex-wrap gap-2'>
+              <Button
+                variant='outline'
+                className='rounded-xl'
+                onClick={() => addSection(model.id)}
+              >
+                <Plus aria-hidden='true' className='size-4' />
+                Adicionar seção
+              </Button>
+              <Button
+                className='rounded-xl'
+                onClick={() => navigate({ to: '/modelos' })}
+              >
+                <Check aria-hidden='true' className='size-4' />
+                Concluir edição
+              </Button>
+            </div>
+          </>
+        )}
       </Main>
     </>
   )
