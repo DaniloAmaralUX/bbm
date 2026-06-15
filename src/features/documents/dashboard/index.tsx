@@ -20,7 +20,7 @@ import {
   trUnitData,
 } from '../data/app'
 import { CategoryBarChart } from './components/category-bar-chart'
-import { TRChainFunnel } from './components/tr-chain-funnel'
+import { TRChainHero } from './components/tr-chain-hero'
 import { TRKpiCards } from './components/tr-kpi-cards'
 import { TRRecentList } from './components/tr-recent-list'
 import { TRStatusChart } from './components/tr-status-chart'
@@ -56,6 +56,8 @@ export function TRDashboard() {
             </Button>
           </div>
         </section>
+
+        <TRChainHero funnel={trChainFunnel} />
 
         <TRKpiCards items={trKpis.map((item) => ({ ...item }))} />
 
@@ -112,31 +114,17 @@ export function TRDashboard() {
           </Card>
         </section>
 
-        <section className='grid gap-4 xl:grid-cols-6'>
-          <Card className='rounded-2xl border-0 shadow-border xl:col-span-3'>
-            <CardHeader className='space-y-2'>
-              <SectionLabel>Conclusão da cadeia</SectionLabel>
-              <CardDescription className='text-pretty'>
-                Cadeias que avançam de DFD a ETP e TR concluídos.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TRChainFunnel funnel={trChainFunnel} />
-            </CardContent>
-          </Card>
-
-          <Card className='rounded-2xl border-0 shadow-border xl:col-span-3'>
-            <CardHeader className='space-y-2'>
-              <SectionLabel>Documentos recentes</SectionLabel>
-              <CardDescription className='text-pretty'>
-                Últimos documentos atualizados pelas áreas.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className='px-3'>
-              <TRRecentList items={recentTrs.map((item) => ({ ...item }))} />
-            </CardContent>
-          </Card>
-        </section>
+        <Card className='rounded-2xl border-0 shadow-border'>
+          <CardHeader className='space-y-2'>
+            <SectionLabel>Documentos recentes</SectionLabel>
+            <CardDescription className='text-pretty'>
+              Últimos documentos atualizados pelas áreas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className='px-3'>
+            <TRRecentList items={recentTrs.map((item) => ({ ...item }))} />
+          </CardContent>
+        </Card>
       </Main>
     </>
   )
