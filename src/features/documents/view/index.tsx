@@ -1,5 +1,11 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, CheckCircle2, FilePenLine, FilePlus2 } from 'lucide-react'
+import {
+  ArrowLeft,
+  CheckCircle2,
+  FilePenLine,
+  FilePlus2,
+  Link2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Header } from '@/shared/layout/header'
 import { HeaderActions } from '@/shared/layout/header-actions'
@@ -45,6 +51,8 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
 
   // Linhagem da cadeia (ancestrais + o proprio + descendentes) para o rail.
   const chain = chainOf(item, trs)
+  // Origem da heranca: documento raiz da cadeia, quando este e um descendente.
+  const inheritanceOrigin = item.parentId ? chain[0] : undefined
   const formattedDate = new Intl.DateTimeFormat('pt-BR').format(
     new Date(document.updatedAt)
   )
@@ -158,6 +166,26 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
 
         {/* Cadeia: linhagem do documento (elemento-assinatura da herança). */}
         <TRLineageRail chain={chain} currentId={item.id} />
+
+        {/* Herança consolidada em texto: nomeia a origem dos campos comuns. */}
+        {inheritanceOrigin ? (
+          <Alert className='print:hidden'>
+            <Link2 aria-hidden='true' className='size-4' />
+            <AlertDescription>
+              Os campos comuns deste documento (objeto, justificativa, unidade
+              requisitante, responsável e vínculo ao PCA) foram herdados da
+              cadeia, com origem no{' '}
+              <Link
+                to='/documentos/$documentoId'
+                params={{ documentoId: inheritanceOrigin.id }}
+                className='font-medium text-foreground underline-offset-4 hover:underline'
+              >
+                {inheritanceOrigin.id}
+              </Link>
+              .
+            </AlertDescription>
+          </Alert>
+        ) : null}
 
         {/* Documento + TOC rail sticky (lg+); stacked + sheet flutuante no mobile. */}
         <div className='grid gap-6 lg:grid-cols-[1fr_240px] lg:items-start'>
