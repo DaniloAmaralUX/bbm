@@ -58,7 +58,7 @@ export function TRUnitsChart({ data }: TRUnitsChartProps) {
             content={
               <ChartTooltipContent
                 hideLabel
-                formatter={(value) => `${value ?? 0} TRs`}
+                formatter={(value) => `${value ?? 0} documentos`}
               />
             }
           />

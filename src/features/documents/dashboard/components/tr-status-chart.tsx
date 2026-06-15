@@ -61,7 +61,7 @@ export function TRStatusChart({ data }: TRStatusChartProps) {
                         {cfg?.label}
                       </span>
                       <span className='ms-auto font-medium text-foreground tabular-nums'>
-                        {value} TRs
+                        {value} documentos
                       </span>
                     </>
                   )
@@ -106,7 +106,7 @@ export function TRStatusChart({ data }: TRStatusChartProps) {
                       dominantBaseline='central'
                       className='fill-muted-foreground text-[10px] font-semibold tracking-[0.14em] uppercase'
                     >
-                      TRs ativos
+                      Documentos
                     </text>
                   </g>
                 )
