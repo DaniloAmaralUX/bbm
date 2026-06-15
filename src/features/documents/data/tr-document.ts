@@ -1,7 +1,14 @@
 import { docTypeFullLabel } from './doc-type'
+import { serializeItems, suggestedItems } from './items'
 import { type TRItem } from './schema'
-import { type DocumentSection } from './templates'
+import { type DocumentSection, itemsToTableSection } from './templates'
 import { trs } from './trs'
+
+// Itens representativos para o artefato (a view e o export sao mock estatico).
+const trItemsTableSection = itemsToTableSection(
+  serializeItems(suggestedItems()),
+  '5. Itens e modalidade'
+)
 
 export function getTRById(trId?: string) {
   return trs.find((item) => item.id === trId) ?? trs[0]
@@ -88,8 +95,8 @@ function trSections(tr: TRItem): DocumentSection[] {
       '4. Execução e medição',
       'Rotinas de execução, entregas esperadas e critérios de aceite, medição e pagamento.'
     ),
-    keyValue('5. Itens e modalidade', [
-      ['Itens e quantidades', 'Conforme planilha de itens da contratação.'],
+    ...(trItemsTableSection ? [trItemsTableSection] : []),
+    keyValue('Modalidade observada', [
       ['Modalidade observada', 'Pregão eletrônico'],
     ]),
   ]
