@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, CheckCircle2, FilePenLine } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, FilePenLine, FilePlus2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Header } from '@/shared/layout/header'
 import { HeaderActions } from '@/shared/layout/header-actions'
@@ -11,10 +11,17 @@ import { Card, CardContent } from '@/shared/ui/card'
 import { Separator } from '@/shared/ui/separator'
 import { SectionLabel } from '@/shared/components/section-label'
 import {
+  canStartChildOf,
+  childrenOf,
+  nextChildTypeOf,
+} from '@/features/documents/data/chain'
+import {
   trStatusBadgeClass,
   trStatusLabels,
 } from '@/features/documents/data/data'
-import { getTRDocument } from '@/features/documents/data/tr-document'
+import { docTypeLabel } from '@/features/documents/data/doc-type'
+import { getTRById, getTRDocument } from '@/features/documents/data/tr-document'
+import { trs } from '@/features/documents/data/trs'
 import { TRDocumentToc } from './components/tr-document-toc'
 import { TRDocumentView } from './components/tr-document-view'
 
@@ -25,7 +32,14 @@ type TRViewPageProps = {
 
 export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
   const document = getTRDocument(trId)
+  const item = getTRById(trId)
   const isApproved = document.status === 'approved'
+
+  // Pode iniciar o proximo da cadeia (ETP a partir de DFD concluido, etc.) se o
+  // documento esta concluido e ainda nao tem filho.
+  const childType = nextChildTypeOf(item)
+  const canStartChild =
+    canStartChildOf(item) && childrenOf(item.id, trs).length === 0
   const formattedDate = new Intl.DateTimeFormat('pt-BR').format(
     new Date(document.updatedAt)
   )
@@ -80,6 +94,14 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
                   >
                     <CheckCircle2 aria-hidden='true' className='size-4' />
                     Aprovar documento
+                  </Button>
+                )}
+                {canStartChild && childType && (
+                  <Button asChild className='rounded-xl'>
+                    <Link to='/documentos/novo' search={{ parentId: item.id }}>
+                      <FilePlus2 aria-hidden='true' className='size-4' />
+                      Iniciar {docTypeLabel(childType)}
+                    </Link>
                   </Button>
                 )}
               </div>

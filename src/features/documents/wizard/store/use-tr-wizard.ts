@@ -1,10 +1,15 @@
 import { create } from 'zustand'
-import { type DocType } from '@/features/documents/data/doc-type'
+import {
+  canStartChildOf,
+  nextChildTypeOf,
+} from '@/features/documents/data/chain'
+import { type DocType, docTypes } from '@/features/documents/data/doc-type'
 import {
   type ChainState,
   type DocumentCells,
   cellsToDocumentData,
   concludeDocument,
+  createChainState,
   inheritCommonFields,
   isDocumentLocked,
   resolveStepModel,
@@ -12,6 +17,7 @@ import {
   selectModelForStep,
   setCellValue,
 } from '@/features/documents/data/inheritance'
+import { type TRItem } from '@/features/documents/data/schema'
 import {
   type DocumentData,
   buildReviewState,
@@ -49,6 +55,8 @@ type TRWizardState = TRWizardData & {
     title: string
     unit: string
   }) => void
+  /** Inicia o documento dependente a partir de um pai concluido da cadeia. */
+  seedChainFromParent: (parent: TRItem) => void
   reset: () => void
   /** Celulas do documento corrente. */
   currentCells: () => DocumentCells
@@ -285,6 +293,44 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
       },
       isDirty: false,
     })),
+  seedChainFromParent: (parent) =>
+    set((state) => {
+      const childType = nextChildTypeOf(parent)
+      if (!childType || !canStartChildOf(parent)) return {}
+      // Marca como concluidos (read-only) o pai e seus ancestrais.
+      const parentIndex = docTypes.indexOf(parent.docType)
+      const done: Partial<Record<DocType, boolean>> = {}
+      for (const docType of docTypes) {
+        if (docTypes.indexOf(docType) <= parentIndex) done[docType] = true
+      }
+      // O TRItem so carrega unit/owner/summary; os demais campos comuns
+      // (justificativa, vinculo ao PCA, solucao) ficam vazios no ancestral.
+      const parentSeed: Record<string, string> = {
+        requestingUnit: parent.unit,
+        responsible: parent.owner,
+        object: parent.summary,
+      }
+      const chain = createChainState({
+        current: childType,
+        done,
+        seedByType: { [parent.docType]: parentSeed },
+      })
+      return {
+        chain,
+        context: {
+          ...state.context,
+          title: parent.title,
+          responsibleUnit: parent.unit,
+          docType: childType,
+        },
+        submission: {
+          status: 'editing' as const,
+          savedAt: '',
+          completedAt: '',
+        },
+        isDirty: false,
+      }
+    }),
   reset: () =>
     set({
       ...createInitialTRWizardData(),

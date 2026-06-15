@@ -277,6 +277,47 @@ export function originLabel(
 }
 
 /**
+ * Monta um `ChainState` parametrizado: define o documento corrente, quais ja
+ * estao concluidos (read-only) e os valores semeados por tipo, e ja propaga a
+ * heranca para os descendentes. Base comum de `createInitialChainState` e do
+ * inicio de cadeia a partir de um documento pai.
+ */
+export function createChainState(opts: {
+  current: DocType
+  done?: Partial<Record<DocType, boolean>>
+  seedByType?: Partial<Record<DocType, Record<string, string>>>
+}): ChainState {
+  const { current, done = {}, seedByType = {} } = opts
+
+  const selectedModelId: Record<DocType, string> = {
+    dfd: getModelForDocType('dfd').id,
+    etp: getModelForDocType('etp').id,
+    tr: getModelForDocType('tr').id,
+  }
+
+  let state: ChainState = {
+    current,
+    done: {
+      dfd: done.dfd ?? false,
+      etp: done.etp ?? false,
+      tr: done.tr ?? false,
+    },
+    selectedModelId,
+    cells: {
+      dfd: createCellsForModel(getModelForDocType('dfd'), seedByType.dfd),
+      etp: createCellsForModel(getModelForDocType('etp'), seedByType.etp),
+      tr: createCellsForModel(getModelForDocType('tr'), seedByType.tr),
+    },
+  }
+
+  // Semeia a heranca nos descendentes (campos comuns ja aparecem como herdados
+  // antes mesmo da conclusao, como no protótipo).
+  state = inheritCommonFields(state, 'etp')
+  state = inheritCommonFields(state, 'tr')
+  return state
+}
+
+/**
  * Cria o estado inicial da cadeia: DFD semeado com dados realistas de
  * prefeitura; ETP e TR comecam vazios e ja recebem a heranca dos campos comuns.
  * Cada tipo comeca com o modelo publicado padrao selecionado.
@@ -293,28 +334,7 @@ export function createInitialChainState(): ChainState {
     pcaLink: 'Item 12/2026 do Plano de Contratações Anual',
   }
 
-  const selectedModelId: Record<DocType, string> = {
-    dfd: getModelForDocType('dfd').id,
-    etp: getModelForDocType('etp').id,
-    tr: getModelForDocType('tr').id,
-  }
-
-  let state: ChainState = {
-    current: 'dfd',
-    done: { dfd: false, etp: false, tr: false },
-    selectedModelId,
-    cells: {
-      dfd: createCellsForModel(getModelForDocType('dfd'), dfdSeed),
-      etp: createCellsForModel(getModelForDocType('etp')),
-      tr: createCellsForModel(getModelForDocType('tr')),
-    },
-  }
-
-  // Semeia a heranca inicial nos descendentes (campos comuns ja aparecem como
-  // herdados antes mesmo da conclusao, como no protótipo).
-  state = inheritCommonFields(state, 'etp')
-  state = inheritCommonFields(state, 'tr')
-  return state
+  return createChainState({ current: 'dfd', seedByType: { dfd: dfdSeed } })
 }
 
 /** Indica se um campo participa da heranca da cadeia (marcado `inheritable`). */

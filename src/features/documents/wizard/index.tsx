@@ -41,6 +41,10 @@ import {
 } from '@/shared/ui/select'
 import { Textarea } from '@/shared/ui/textarea'
 import {
+  canStartChildOf,
+  nextChildTypeOf,
+} from '@/features/documents/data/chain'
+import {
   type DocType,
   docTypeFullLabel,
   docTypeLabel,
@@ -70,9 +74,13 @@ type StepErrors = Record<string, string>
 
 type TRWizardPageProps = {
   duplicateFrom?: string
+  parentId?: string
 }
 
-export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
+export function TRWizardPage({
+  duplicateFrom,
+  parentId,
+}: TRWizardPageProps = {}) {
   const chain = useTRWizard((state) => state.chain)
   const context = useTRWizard((state) => state.context)
   const submission = useTRWizard((state) => state.submission)
@@ -84,6 +92,7 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
   const saveDraft = useTRWizard((state) => state.saveDraft)
   const setAssistantTarget = useTRWizard((state) => state.setAssistantTarget)
   const seedFromDuplicate = useTRWizard((state) => state.seedFromDuplicate)
+  const seedChainFromParent = useTRWizard((state) => state.seedChainFromParent)
 
   const current = chain.current
   const isDone = chain.done[current]
@@ -142,6 +151,28 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
     seedFromDuplicate({ id: source.id, title: source.title, unit: source.unit })
     toast.success(`Editando uma cópia de ${source.id}`)
   }, [duplicateFrom, seedFromDuplicate])
+
+  // Inicia o documento dependente a partir de um pai concluido ("Iniciar X").
+  useEffect(() => {
+    if (!parentId || seededRef.current) return
+    const parent = trs.find((item) => item.id === parentId)
+    seededRef.current = true
+    // parentId inexistente: cai no fluxo padrao (cadeia nova a partir do DFD).
+    if (!parent) return
+    const childType = nextChildTypeOf(parent)
+    if (!childType || !canStartChildOf(parent)) {
+      toast.error(
+        childType
+          ? `O ${docTypeLabel(parent.docType)} precisa estar concluído para iniciar o ${docTypeLabel(childType)}.`
+          : `O ${docTypeLabel(parent.docType)} é o último documento da cadeia.`
+      )
+      return
+    }
+    seedChainFromParent(parent)
+    toast.success(
+      `${docTypeLabel(childType)} iniciado a partir do ${parent.id}.`
+    )
+  }, [parentId, seedChainFromParent])
 
   // Reflete o documento corrente na URL (?tipo=) para deep-link/refresh.
   useEffect(() => {
