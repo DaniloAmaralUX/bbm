@@ -30,6 +30,7 @@ import {
   FieldError,
   FieldLabel,
 } from '@/shared/ui/field'
+import { Input } from '@/shared/ui/input'
 import { Progress } from '@/shared/ui/progress'
 import {
   Select,
@@ -39,13 +40,6 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { Textarea } from '@/shared/ui/textarea'
-import { Input } from '@/shared/ui/input'
-import {
-  type FieldDefinition,
-  type SectionDefinition,
-  buildReviewState,
-  getModelForDocType,
-} from '@/features/documents/data/templates'
 import {
   type DocType,
   docTypeFullLabel,
@@ -58,6 +52,12 @@ import {
   cellsToDocumentData,
   isDocumentLocked,
 } from '@/features/documents/data/inheritance'
+import {
+  type FieldDefinition,
+  type SectionDefinition,
+  buildReviewState,
+  getModelForDocType,
+} from '@/features/documents/data/templates'
 import { trs } from '@/features/documents/data/trs'
 import { TRAIAssistant } from './components/tr-ai-assistant'
 import { TRLineagePanel } from './components/tr-lineage-panel'
@@ -239,10 +239,10 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
               <ClipboardList aria-hidden='true' className='size-4' />
             </div>
             <div className='min-w-0'>
-              <h1 className='text-balance text-base font-semibold tracking-tight'>
+              <h1 className='text-base font-semibold tracking-tight text-balance'>
                 Cadeia da fase preparatória
               </h1>
-              <p className='line-clamp-2 text-pretty text-xs text-muted-foreground'>
+              <p className='line-clamp-2 text-xs text-pretty text-muted-foreground'>
                 Um motor para os três documentos. Os campos comuns fluem do DFD
                 para o ETP e o TR por herança.
               </p>
@@ -253,7 +253,8 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
             <div className='hidden min-w-[180px] flex-1 sm:block sm:max-w-[220px]'>
               <div className='flex items-center justify-between text-xs'>
                 <span className='text-muted-foreground'>
-                  Obrigatórios do <span translate='no'>{docTypeLabel(current)}</span>
+                  Obrigatórios do{' '}
+                  <span translate='no'>{docTypeLabel(current)}</span>
                 </span>
                 <span className='font-semibold tabular-nums'>
                   {reviewState.completedRequired}/{reviewState.totalRequired}
@@ -297,8 +298,8 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
                     <AlertTitle>Documento concluído</AlertTitle>
                     <AlertDescription>
                       Este {docTypeLabel(current)} foi concluído e está em modo
-                      somente leitura. Os campos comuns já fluíram para o próximo
-                      documento da cadeia.
+                      somente leitura. Os campos comuns já fluíram para o
+                      próximo documento da cadeia.
                     </AlertDescription>
                   </Alert>
                 ) : null}
@@ -453,7 +454,7 @@ function FieldSection({
   return (
     <section className='space-y-4'>
       <div>
-        <h3 className='text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground'>
+        <h3 className='text-xs font-semibold tracking-[0.04em] text-muted-foreground uppercase'>
           {section.title}
         </h3>
         {section.description ? (
@@ -560,7 +561,8 @@ function FieldRow({
             className='gap-1 rounded-full border-primary/20 bg-secondary px-2 py-0 text-[11px] font-semibold text-secondary-foreground'
           >
             <Link2 aria-hidden='true' className='size-3' />
-            Herdado de {cell.inheritedFrom ? docTypeLabel(cell.inheritedFrom) : ''}
+            Herdado de{' '}
+            {cell.inheritedFrom ? docTypeLabel(cell.inheritedFrom) : ''}
           </Badge>
         ) : null}
         {isAdjusted ? (
@@ -622,7 +624,9 @@ function FieldRow({
           type={field.input}
           data-field-id={field.id}
           autoComplete={field.autocomplete ?? 'off'}
-          spellCheck={field.spellCheck ?? (field.input === 'email' ? false : true)}
+          spellCheck={
+            field.spellCheck ?? (field.input === 'email' ? false : true)
+          }
           enterKeyHint='next'
           placeholder={field.placeholder}
           value={cell.value}

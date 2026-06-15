@@ -49,7 +49,10 @@ export function CommandPaletteTrigger() {
 
   const goToTR = (trId: string) => {
     setOpen(false)
-    void navigate({ to: '/documentos/$documentoId', params: { documentoId: trId } })
+    void navigate({
+      to: '/documentos/$documentoId',
+      params: { documentoId: trId },
+    })
   }
 
   const recentTRs = trs.slice(0, 6)

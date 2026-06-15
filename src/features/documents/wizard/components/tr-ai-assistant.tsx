@@ -1,11 +1,5 @@
 import { useMemo, useState } from 'react'
-import {
-  Copy,
-  RefreshCcw,
-  RotateCcw,
-  Sparkles,
-  Wand2,
-} from 'lucide-react'
+import { Copy, RefreshCcw, RotateCcw, Sparkles, Wand2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'
 import {
@@ -29,20 +23,23 @@ import {
 } from '@/shared/ui/card'
 import { ScrollArea } from '@/shared/ui/scroll-area'
 import { Skeleton } from '@/shared/ui/skeleton'
+import { docTypeLabel } from '@/features/documents/data/doc-type'
+import {
+  getModelForDocType,
+  type FieldDefinition,
+} from '@/features/documents/data/templates'
 import {
   type TRAssistantAction,
   getFieldSupport,
   trAssistantActionDescriptions,
   trAssistantActionLabels,
 } from '@/features/documents/data/tr-assistant'
-import {
-  getModelForDocType,
-  type FieldDefinition,
-} from '@/features/documents/data/templates'
-import { docTypeLabel } from '@/features/documents/data/doc-type'
 import { useTRWizard } from '../store/use-tr-wizard'
 
-const actionIcons: Record<TRAssistantAction, React.ComponentType<{ className?: string }>> = {
+const actionIcons: Record<
+  TRAssistantAction,
+  React.ComponentType<{ className?: string }>
+> = {
   suggest: Wand2,
   expand: Sparkles,
   rewrite: RefreshCcw,
@@ -166,10 +163,12 @@ export function TRAIAssistant() {
             </p>
           ) : support !== 'narrative' ? (
             <Alert>
-              <AlertTitle className='text-sm'>Sem geração para este campo</AlertTitle>
+              <AlertTitle className='text-sm'>
+                Sem geração para este campo
+              </AlertTitle>
               <AlertDescription className='text-xs'>
-                A IA atua apenas em campos narrativos (textareas). Use as
-                opções diretas do campo para preencher.
+                A IA atua apenas em campos narrativos (textareas). Use as opções
+                diretas do campo para preencher.
               </AlertDescription>
             </Alert>
           ) : (
@@ -226,7 +225,9 @@ export function TRAIAssistant() {
                   <div className='text-xs font-semibold tracking-[0.14em] text-primary uppercase'>
                     {trAssistantActionLabels[suggestion.action]}
                   </div>
-                  <div className='text-sm font-semibold'>{suggestion.title}</div>
+                  <div className='text-sm font-semibold'>
+                    {suggestion.title}
+                  </div>
                 </div>
                 <Button
                   type='button'
@@ -240,7 +241,7 @@ export function TRAIAssistant() {
                 </Button>
               </div>
               <ScrollArea className='max-h-48 rounded-md border bg-muted/30 p-3 text-xs leading-relaxed'>
-                <p className='whitespace-pre-line text-pretty'>
+                <p className='text-pretty whitespace-pre-line'>
                   {suggestion.content}
                 </p>
               </ScrollArea>
@@ -274,10 +275,7 @@ export function TRAIAssistant() {
         </CardContent>
       </Card>
 
-      <AlertDialog
-        open={confirmOverwrite}
-        onOpenChange={setConfirmOverwrite}
-      >
+      <AlertDialog open={confirmOverwrite} onOpenChange={setConfirmOverwrite}>
         <AlertDialogContent className='rounded-2xl'>
           <AlertDialogHeader>
             <AlertDialogTitle>Substituir o texto atual?</AlertDialogTitle>
@@ -291,10 +289,7 @@ export function TRAIAssistant() {
             <AlertDialogCancel className='rounded-xl'>
               Manter o que está
             </AlertDialogCancel>
-            <AlertDialogAction
-              className='rounded-xl'
-              onClick={confirmAndApply}
-            >
+            <AlertDialogAction className='rounded-xl' onClick={confirmAndApply}>
               Sim, substituir
             </AlertDialogAction>
           </AlertDialogFooter>

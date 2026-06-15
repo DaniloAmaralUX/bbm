@@ -7,10 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/ui/card'
-import {
-  type DocType,
-  docTypeLabel,
-} from '@/features/documents/data/doc-type'
+import { type DocType, docTypeLabel } from '@/features/documents/data/doc-type'
 import {
   type DocumentCells,
   type FieldOrigin,
@@ -74,7 +71,7 @@ export function TRLineagePanel({
             >
               <OriginIcon origin={row.origin} />
               <div className='min-w-0'>
-                <p className='text-sm font-medium leading-tight'>{row.label}</p>
+                <p className='text-sm leading-tight font-medium'>{row.label}</p>
                 <p className='text-xs text-muted-foreground'>
                   {originDescription(row, docType)}
                 </p>

@@ -67,7 +67,10 @@ export type DocumentSection =
     }
 
 const unitOptions = [
-  { label: 'Secretaria de Administração', value: 'Secretaria de Administração' },
+  {
+    label: 'Secretaria de Administração',
+    value: 'Secretaria de Administração',
+  },
   { label: 'Secretaria de Educação', value: 'Secretaria de Educação' },
   { label: 'Secretaria de Saúde', value: 'Secretaria de Saúde' },
   {
@@ -143,8 +146,7 @@ const commonFields: Record<string, FieldDefinition> = {
     label: 'Justificativa',
     input: 'textarea',
     required: true,
-    placeholder:
-      'Explique a necessidade, o contexto e o resultado esperado…',
+    placeholder: 'Explique a necessidade, o contexto e o resultado esperado…',
     autocomplete: 'off',
   },
   pcaLink: {
@@ -489,7 +491,10 @@ export function buildDocumentSections(
       kind: 'keyValue',
       title: 'Contexto do documento',
       items: [
-        { label: 'Tipo de documento', value: docTypeFullLabel(context.docType) },
+        {
+          label: 'Tipo de documento',
+          value: docTypeFullLabel(context.docType),
+        },
         { label: 'Modelo', value: model.label },
         { label: 'Unidade responsável', value: context.responsibleUnit },
       ],

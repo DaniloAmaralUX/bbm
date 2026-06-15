@@ -293,9 +293,14 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
 /** Estado de revisao do documento corrente, derivado das celulas atuais. */
 export function selectReviewState(state: TRWizardState) {
   const model = getModelForDocType(state.chain.current)
-  const documentData = cellsToDocumentData(state.chain.cells[state.chain.current])
+  const documentData = cellsToDocumentData(
+    state.chain.cells[state.chain.current]
+  )
   return buildReviewState(
-    { title: state.context.title, responsibleUnit: state.context.responsibleUnit },
+    {
+      title: state.context.title,
+      responsibleUnit: state.context.responsibleUnit,
+    },
     model,
     documentData
   )

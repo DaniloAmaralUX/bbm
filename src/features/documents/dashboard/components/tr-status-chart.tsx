@@ -29,9 +29,7 @@ function slug(label: string) {
 
 export function TRStatusChart({ data }: TRStatusChartProps) {
   const total = data.reduce((sum, item) => sum + item.value, 0)
-  const summary = data
-    .map((item) => `${item.label}: ${item.value}`)
-    .join(', ')
+  const summary = data.map((item) => `${item.label}: ${item.value}`).join(', ')
 
   const keyed = data.map((item) => ({ ...item, key: slug(item.label) }))
 
@@ -62,7 +60,7 @@ export function TRStatusChart({ data }: TRStatusChartProps) {
                       <span className='text-muted-foreground'>
                         {cfg?.label}
                       </span>
-                      <span className='ms-auto font-medium tabular-nums text-foreground'>
+                      <span className='ms-auto font-medium text-foreground tabular-nums'>
                         {value} TRs
                       </span>
                     </>
@@ -85,11 +83,7 @@ export function TRStatusChart({ data }: TRStatusChartProps) {
             ))}
             <Label
               content={({ viewBox }) => {
-                if (
-                  !viewBox ||
-                  !('cx' in viewBox) ||
-                  !('cy' in viewBox)
-                ) {
+                if (!viewBox || !('cx' in viewBox) || !('cy' in viewBox)) {
                   return null
                 }
                 const cx = viewBox.cx ?? 0
@@ -110,7 +104,7 @@ export function TRStatusChart({ data }: TRStatusChartProps) {
                       y={cy + 18}
                       textAnchor='middle'
                       dominantBaseline='central'
-                      className='fill-muted-foreground text-[10px] font-semibold uppercase tracking-[0.14em]'
+                      className='fill-muted-foreground text-[10px] font-semibold tracking-[0.14em] uppercase'
                     >
                       TRs ativos
                     </text>

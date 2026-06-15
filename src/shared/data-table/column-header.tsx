@@ -32,11 +32,7 @@ export function DataTableColumnHeader<TData, TValue>({
 
   const sorted = column.getIsSorted()
   const ariaSort =
-    sorted === 'asc'
-      ? 'ascending'
-      : sorted === 'desc'
-        ? 'descending'
-        : 'none'
+    sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'
 
   return (
     <div className={cn('flex items-center space-x-2', className)}>

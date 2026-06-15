@@ -16,7 +16,7 @@ export function SectionLabel({ children, className }: SectionLabelProps) {
   return (
     <div
       className={cn(
-        'text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground',
+        'text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase',
         className
       )}
     >

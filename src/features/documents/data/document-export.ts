@@ -55,7 +55,8 @@ function sectionToHtml(section: DocumentSection): string {
 
   // table
   if (!section.rows.length) {
-    const empty = section.emptyMessage ?? 'Sem registros para exibir nesta seção.'
+    const empty =
+      section.emptyMessage ?? 'Sem registros para exibir nesta seção.'
     return `<section>${heading}<p class="empty">${escapeHtml(empty)}</p></section>`
   }
   const head = section.columns

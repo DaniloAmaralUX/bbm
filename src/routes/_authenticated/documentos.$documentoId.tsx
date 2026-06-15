@@ -9,9 +9,11 @@ function TRViewRouteComponent() {
   return <TRViewPage trId={documentoId} mode={mode} />
 }
 
-export const Route = createFileRoute('/_authenticated/documentos/$documentoId')({
-  validateSearch: z.object({
-    mode: z.enum(['view', 'edit']).optional().catch('view'),
-  }),
-  component: TRViewRouteComponent,
-})
+export const Route = createFileRoute('/_authenticated/documentos/$documentoId')(
+  {
+    validateSearch: z.object({
+      mode: z.enum(['view', 'edit']).optional().catch('view'),
+    }),
+    component: TRViewRouteComponent,
+  }
+)

@@ -154,9 +154,17 @@ export function TRDocumentView({
   )
 }
 
-export function TRDocumentViewSkeleton({ sections = 4 }: { sections?: number }) {
+export function TRDocumentViewSkeleton({
+  sections = 4,
+}: {
+  sections?: number
+}) {
   return (
-    <Card aria-busy='true' aria-label='Carregando documento' className='rounded-2xl'>
+    <Card
+      aria-busy='true'
+      aria-label='Carregando documento'
+      className='rounded-2xl'
+    >
       <CardHeader className='space-y-3'>
         <Skeleton className='h-7 w-72' />
         <Skeleton className='h-4 w-40 rounded-full' />

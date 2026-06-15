@@ -1,3 +1,5 @@
+import { trStatusTokens } from './data'
+
 // Identidade do produto. Nome placeholder ("Fase Preparatória") — trocar aqui
 // quando a marca definitiva for definida; sidebar, títulos e breadcrumb derivam daqui.
 export const appIdentity = {
@@ -39,8 +41,6 @@ export const trKpis = [
     trend: { value: 4, direction: 'up' as const, period: 'vs. mês passado' },
   },
 ] as const
-
-import { trStatusTokens } from './data'
 
 export const trStatusData = [
   {

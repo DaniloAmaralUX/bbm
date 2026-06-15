@@ -65,13 +65,16 @@ export function TRsRowActions<TData>({ row }: TRsRowActionsProps<TData>) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end' className='w-[220px]'>
-          <DropdownMenuLabel className='text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground'>
+          <DropdownMenuLabel className='text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase'>
             Ações
           </DropdownMenuLabel>
 
           <DropdownMenuGroup>
             <DropdownMenuItem asChild>
-              <Link to='/documentos/$documentoId' params={{ documentoId: tr.id }}>
+              <Link
+                to='/documentos/$documentoId'
+                params={{ documentoId: tr.id }}
+              >
                 <FileSearch aria-hidden='true' className='size-4' />
                 Abrir
               </Link>
@@ -88,7 +91,10 @@ export function TRsRowActions<TData>({ row }: TRsRowActionsProps<TData>) {
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() =>
-                navigate({ to: '/documentos/novo', search: { duplicate: tr.id } })
+                navigate({
+                  to: '/documentos/novo',
+                  search: { duplicate: tr.id },
+                })
               }
             >
               <Copy aria-hidden='true' className='size-4' />
@@ -109,7 +115,9 @@ export function TRsRowActions<TData>({ row }: TRsRowActionsProps<TData>) {
                   onClick={() => {
                     const opened = printTRToPdf(tr.id)
                     if (!opened) {
-                      toast.error('Não foi possível gerar o PDF para impressão.')
+                      toast.error(
+                        'Não foi possível gerar o PDF para impressão.'
+                      )
                     }
                   }}
                 >
@@ -159,8 +167,8 @@ export function TRsRowActions<TData>({ row }: TRsRowActionsProps<TData>) {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir {tr.id}?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O documento e todo o histórico
-              de edições serão removidos permanentemente.
+              Esta ação não pode ser desfeita. O documento e todo o histórico de
+              edições serão removidos permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

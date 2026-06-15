@@ -24,9 +24,7 @@ const chartConfig: ChartConfig = {
 
 export function TRUnitsChart({ data }: TRUnitsChartProps) {
   const total = data.reduce((sum, item) => sum + item.records, 0)
-  const summary = data
-    .map((item) => `${item.unit}: ${item.records}`)
-    .join(', ')
+  const summary = data.map((item) => `${item.unit}: ${item.records}`).join(', ')
 
   return (
     <div

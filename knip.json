@@ -1,5 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "entry": ["src/features/documents/data/doc-type.ts"],
-  "ignore": ["src/tanstack-table.d.ts"]
+  "ignore": ["src/tanstack-table.d.ts"],
+  "ignoreDependencies": ["shadcn"]
 }

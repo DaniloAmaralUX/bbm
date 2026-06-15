@@ -2,11 +2,7 @@ import { useEffect, useState } from 'react'
 import { cn } from '@/shared/lib/utils'
 import { Separator } from '@/shared/ui/separator'
 import { SidebarTrigger } from '@/shared/ui/sidebar'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/shared/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip'
 import { CommandPaletteTrigger } from './command-palette'
 import { RouteBreadcrumb } from './route-breadcrumb'
 

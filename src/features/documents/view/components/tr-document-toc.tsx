@@ -116,7 +116,7 @@ function TocList({
               aria-current={isActive ? 'true' : undefined}
               className={cn(
                 'flex items-start gap-2 rounded-lg border-l-2 border-transparent px-3 py-1.5 text-xs leading-relaxed transition-[background-color,border-color,color] duration-200 ease-[var(--ease-emil-out)]',
-                'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                 isActive &&
                   'border-l-primary bg-primary/5 font-semibold text-primary'
               )}

@@ -10,9 +10,12 @@ import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
 import { Separator } from '@/shared/ui/separator'
 import { SectionLabel } from '@/shared/components/section-label'
-import { TRDocumentToc } from './components/tr-document-toc'
-import { trStatusBadgeClass, trStatusLabels } from '@/features/documents/data/data'
+import {
+  trStatusBadgeClass,
+  trStatusLabels,
+} from '@/features/documents/data/data'
 import { getTRDocument } from '@/features/documents/data/tr-document'
+import { TRDocumentToc } from './components/tr-document-toc'
 import { TRDocumentView } from './components/tr-document-view'
 
 type TRViewPageProps = {
@@ -84,7 +87,7 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
 
             <div className='space-y-2'>
               <div className='flex flex-wrap items-center gap-3'>
-                <h1 className='font-mono tabular-nums text-3xl font-semibold tracking-tight text-balance'>
+                <h1 className='font-mono text-3xl font-semibold tracking-tight text-balance tabular-nums'>
                   {document.id}
                 </h1>
                 <Badge

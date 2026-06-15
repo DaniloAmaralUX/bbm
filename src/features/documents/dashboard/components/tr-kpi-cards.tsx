@@ -33,10 +33,10 @@ export function TRKpiCards({ items }: TRKpiCardsProps) {
             key={item.label}
             className={cn('space-y-2', idx > 0 && 'lg:pl-6')}
           >
-            <div className='text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground'>
+            <div className='text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase'>
               {item.label}
             </div>
-            <div className='text-4xl font-semibold leading-none tabular-nums'>
+            <div className='text-4xl leading-none font-semibold tabular-nums'>
               {item.value}
             </div>
             {item.trend ? (
@@ -78,10 +78,7 @@ export function TRKpiCardsSkeleton({ count = 4 }: { count?: number }) {
     >
       <CardContent className='grid grid-cols-1 gap-6 p-6 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border'>
         {Array.from({ length: count }).map((_, idx) => (
-          <div
-            key={idx}
-            className={cn('space-y-2', idx > 0 && 'lg:pl-6')}
-          >
+          <div key={idx} className={cn('space-y-2', idx > 0 && 'lg:pl-6')}>
             <Skeleton className='h-3 w-24' />
             <Skeleton className='h-9 w-16' />
             <Skeleton className='h-3 w-32' />

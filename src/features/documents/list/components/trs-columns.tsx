@@ -3,12 +3,12 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { DataTableColumnHeader } from '@/shared/data-table'
 import { Badge } from '@/shared/ui/badge'
 import { Checkbox } from '@/shared/ui/checkbox'
-import { docTypeLabel } from '@/features/documents/data/doc-type'
 import {
   trNatureLabels,
   trStatusBadgeClass,
   trStatusLabels,
 } from '@/features/documents/data/data'
+import { docTypeLabel } from '@/features/documents/data/doc-type'
 import { type TRItem } from '@/features/documents/data/schema'
 import { TRsRowActions } from './trs-row-actions'
 

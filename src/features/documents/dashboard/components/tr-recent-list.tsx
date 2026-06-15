@@ -42,7 +42,7 @@ export function TRRecentList({ items }: TRRecentListProps) {
           <Link
             to='/documentos/$documentoId'
             params={{ documentoId: item.id }}
-            className='group flex flex-col gap-1.5 rounded-xl border border-transparent px-3 py-2.5 transition-colors duration-200 ease-[var(--ease-emil-out)] hover-only:hover:border-border hover-only:hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+            className='group flex flex-col gap-1.5 rounded-xl border border-transparent px-3 py-2.5 transition-colors duration-200 ease-[var(--ease-emil-out)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover-only:hover:border-border hover-only:hover:bg-muted/50'
           >
             <div className='flex items-center justify-between gap-2'>
               <span className='font-mono text-[11px] font-medium text-muted-foreground'>
@@ -73,7 +73,7 @@ export function TRRecentList({ items }: TRRecentListProps) {
       <li className='pt-1'>
         <Link
           to='/documentos'
-          className='flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover-only:hover:bg-muted/50 hover-only:hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+          className='flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-muted-foreground transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none hover-only:hover:bg-muted/50 hover-only:hover:text-foreground'
         >
           Ver todos os documentos
           <ArrowRight aria-hidden='true' className='size-3' />
@@ -85,7 +85,11 @@ export function TRRecentList({ items }: TRRecentListProps) {
 
 export function TRRecentListSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <ul aria-busy='true' aria-label='Carregando documentos recentes' className='space-y-2'>
+    <ul
+      aria-busy='true'
+      aria-label='Carregando documentos recentes'
+      className='space-y-2'
+    >
       {Array.from({ length: count }).map((_, idx) => (
         <li key={idx} className='space-y-1.5 px-3 py-2.5'>
           <div className='flex items-center justify-between'>

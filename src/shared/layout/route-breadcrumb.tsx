@@ -1,6 +1,4 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { docTypeLabel } from '@/features/documents/data/doc-type'
-import { useTRWizard } from '@/features/documents/wizard/store/use-tr-wizard'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,6 +7,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/shared/ui/breadcrumb'
+import { docTypeLabel } from '@/features/documents/data/doc-type'
+import { useTRWizard } from '@/features/documents/wizard/store/use-tr-wizard'
 
 type Crumb = { label: string; href?: string }
 

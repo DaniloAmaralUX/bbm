@@ -94,10 +94,13 @@ function ChainStep({
       aria-current={isCurrent ? 'step' : undefined}
       className={cn(
         'group flex min-h-11 w-full flex-1 items-center gap-3 rounded-2xl border bg-card px-4 py-3 text-left transition-[background-color,border-color,box-shadow] duration-200 ease-[var(--ease-emil-out)] motion-reduce:transition-none',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
         isCurrent && 'border-primary shadow-[0_0_0_1px_var(--primary)]',
         isDone && 'border-primary/40',
-        !isCurrent && !isDone && !isLocked && 'border-border hover:border-primary/40',
+        !isCurrent &&
+          !isDone &&
+          !isLocked &&
+          'border-border hover:border-primary/40',
         isLocked && 'cursor-not-allowed border-border opacity-60'
       )}
     >

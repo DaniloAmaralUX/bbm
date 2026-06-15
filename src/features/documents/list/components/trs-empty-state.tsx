@@ -26,7 +26,9 @@ export function TRsEmptyState({
           <FileSearch className='size-6' />
         </EmptyMedia>
         <EmptyTitle>
-          {filtered ? 'Nenhum documento encontrado' : 'Nenhum documento cadastrado'}
+          {filtered
+            ? 'Nenhum documento encontrado'
+            : 'Nenhum documento cadastrado'}
         </EmptyTitle>
         <EmptyDescription>
           {filtered
