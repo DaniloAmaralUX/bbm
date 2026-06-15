@@ -12,6 +12,7 @@ import { Separator } from '@/shared/ui/separator'
 import { SectionLabel } from '@/shared/components/section-label'
 import {
   canStartChildOf,
+  chainOf,
   childrenOf,
   nextChildTypeOf,
 } from '@/features/documents/data/chain'
@@ -24,6 +25,7 @@ import { getTRById, getTRDocument } from '@/features/documents/data/tr-document'
 import { trs } from '@/features/documents/data/trs'
 import { TRDocumentToc } from './components/tr-document-toc'
 import { TRDocumentView } from './components/tr-document-view'
+import { TRLineageRail } from './components/tr-lineage-rail'
 
 type TRViewPageProps = {
   trId?: string
@@ -40,6 +42,9 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
   const childType = nextChildTypeOf(item)
   const canStartChild =
     canStartChildOf(item) && childrenOf(item.id, trs).length === 0
+
+  // Linhagem da cadeia (ancestrais + o proprio + descendentes) para o rail.
+  const chain = chainOf(item, trs)
   const formattedDate = new Intl.DateTimeFormat('pt-BR').format(
     new Date(document.updatedAt)
   )
@@ -150,6 +155,9 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Cadeia: linhagem do documento (elemento-assinatura da herança). */}
+        <TRLineageRail chain={chain} currentId={item.id} />
 
         {/* Documento + TOC rail sticky (lg+); stacked + sheet flutuante no mobile. */}
         <div className='grid gap-6 lg:grid-cols-[1fr_240px] lg:items-start'>
