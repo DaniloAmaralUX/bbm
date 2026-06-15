@@ -24,7 +24,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/ui/card'
-import { Label } from '@/shared/ui/label'
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from '@/shared/ui/field'
 import { Progress } from '@/shared/ui/progress'
 import {
   Select,
@@ -533,9 +538,12 @@ function FieldRow({
   )
 
   return (
-    <div className={cn('grid gap-2', className)}>
+    <Field
+      data-invalid={Boolean(error) || undefined}
+      className={cn('gap-2', className)}
+    >
       <div className='flex flex-wrap items-center gap-x-2 gap-y-1'>
-        <Label htmlFor={field.id} className='text-sm font-medium'>
+        <FieldLabel htmlFor={field.id} className='text-sm font-medium'>
           {field.label}
           {field.required ? (
             <>
@@ -545,7 +553,7 @@ function FieldRow({
               <span className='sr-only'> (obrigatório)</span>
             </>
           ) : null}
-        </Label>
+        </FieldLabel>
         {isInherited ? (
           <Badge
             variant='outline'
@@ -627,9 +635,9 @@ function FieldRow({
       )}
 
       {field.description ? (
-        <p id={`${field.id}-desc`} className='text-xs text-muted-foreground'>
+        <FieldDescription id={`${field.id}-desc`} className='text-xs'>
           {field.description}
-        </p>
+        </FieldDescription>
       ) : null}
 
       {isAdjusted && !readOnly ? (
@@ -637,7 +645,7 @@ function FieldRow({
           type='button'
           variant='link'
           size='sm'
-          className='h-auto w-fit gap-1.5 p-0 text-xs font-semibold text-secondary-foreground'
+          className='h-auto w-fit! gap-1.5 self-start p-0 text-xs font-semibold text-secondary-foreground'
           onClick={onRevert}
         >
           <RotateCcw aria-hidden='true' className='size-3.5' />
@@ -646,13 +654,9 @@ function FieldRow({
       ) : null}
 
       {error ? (
-        <p
-          id={`${field.id}-error`}
-          role='status'
-          className='field-error text-sm text-destructive'
-        >
+        <FieldError id={`${field.id}-error`} className='field-error'>
           {error}
-        </p>
+        </FieldError>
       ) : null}
 
       <span className='sr-only'>
@@ -660,7 +664,7 @@ function FieldRow({
           ? `Campo herdado do ${docType === 'dfd' ? '' : cell.inheritedFrom ? docTypeFullLabel(cell.inheritedFrom) : ''}.`
           : ''}
       </span>
-    </div>
+    </Field>
   )
 }
 
