@@ -40,6 +40,10 @@ type ModelsState = {
     patch: Partial<FieldDefinition>
   ) => void
   removeField: (modelId: string, sectionId: string, fieldId: string) => void
+  /** Publica o modelo; republicar um ja publicado incrementa a versao. */
+  publishModel: (id: string) => void
+  /** Volta o modelo para rascunho (a cadeia deixa de usa-lo). */
+  unpublishModel: (id: string) => void
 }
 
 function newId(prefix: string): string {
@@ -195,6 +199,24 @@ export const useModelsStore = create<ModelsState>()((set) => ({
           ),
         }
       }),
+    })),
+
+  publishModel: (id) =>
+    set((state) => ({
+      models: patchModel(state.models, id, (model) => ({
+        ...model,
+        state: 'published',
+        version:
+          model.state === 'published' ? model.version + 1 : model.version,
+      })),
+    })),
+
+  unpublishModel: (id) =>
+    set((state) => ({
+      models: patchModel(state.models, id, (model) => ({
+        ...model,
+        state: 'draft',
+      })),
     })),
 }))
 

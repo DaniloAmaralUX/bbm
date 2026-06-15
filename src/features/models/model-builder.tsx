@@ -1,9 +1,20 @@
 import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Check, Eye, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Check, Eye, Pencil, Plus, Send, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Header } from '@/shared/layout/header'
 import { HeaderActions } from '@/shared/layout/header-actions'
 import { Main } from '@/shared/layout/main'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/shared/ui/alert-dialog'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
@@ -292,8 +303,11 @@ export function ModelBuilderPage({ modelId }: { modelId: string }) {
   )
   const updateModelMeta = useModelsStore((state) => state.updateModelMeta)
   const addSection = useModelsStore((state) => state.addSection)
+  const publishModel = useModelsStore((state) => state.publishModel)
+  const unpublishModel = useModelsStore((state) => state.unpublishModel)
   const navigate = useNavigate()
   const [mode, setMode] = useState<'edit' | 'preview'>('edit')
+  const [confirmUnpublish, setConfirmUnpublish] = useState(false)
 
   if (!model) {
     return (
@@ -358,9 +372,29 @@ export function ModelBuilderPage({ modelId }: { modelId: string }) {
             {mode === 'edit' ? (
               <span className='inline-flex items-center gap-1.5 text-sm text-muted-foreground'>
                 <Check aria-hidden='true' className='size-4 text-primary' />
-                Rascunho salvo automaticamente
+                Alterações salvas automaticamente
               </span>
             ) : null}
+            {model.state === 'published' ? (
+              <Button
+                variant='outline'
+                className='rounded-xl'
+                onClick={() => setConfirmUnpublish(true)}
+              >
+                Despublicar
+              </Button>
+            ) : (
+              <Button
+                className='rounded-xl'
+                onClick={() => {
+                  publishModel(model.id)
+                  toast.success('Modelo publicado.')
+                }}
+              >
+                <Send aria-hidden='true' className='size-4' />
+                Publicar modelo
+              </Button>
+            )}
           </div>
         </div>
 
@@ -434,6 +468,29 @@ export function ModelBuilderPage({ modelId }: { modelId: string }) {
             </div>
           </>
         )}
+
+        <AlertDialog open={confirmUnpublish} onOpenChange={setConfirmUnpublish}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Despublicar este modelo?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Documentos novos deixam de poder usar este modelo até você
+                publicá-lo de novo. Documentos já criados não são afetados.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Manter publicado</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  unpublishModel(model.id)
+                  toast.success('Modelo despublicado.')
+                }}
+              >
+                Despublicar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </Main>
     </>
   )
