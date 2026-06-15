@@ -6,14 +6,14 @@ import {
   CheckCircle2,
   ChevronLeft,
   ClipboardList,
+  FileCheck2,
+  FileSpreadsheet,
   FileText,
   HelpCircle,
   Loader2,
   PanelRight,
-  Plus,
   Save,
   ShieldCheck,
-  Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Header } from '@/shared/layout/header'
@@ -59,14 +59,6 @@ import {
   SheetTrigger,
 } from '@/shared/ui/sheet'
 import { Separator } from '@/shared/ui/separator'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/shared/ui/table'
 import { Textarea } from '@/shared/ui/textarea'
 import {
   Tooltip,
@@ -75,20 +67,18 @@ import {
   TooltipTrigger,
 } from '@/shared/ui/tooltip'
 import {
-  type TRDeliveryLocation,
   type FieldDefinition,
-  type TRInstitution,
-  type TRLot,
-  type TRLotItem,
   type SectionDefinition,
-  type TRTemplateType,
   buildDocumentSections,
-  getDefaultTemplateForInstitution,
-  getInstitutionOptions,
+  getModelForDocType,
   getResponsibleUnitOptions,
-  getTemplateDefinition,
-  getTemplateOptions,
 } from '@/features/documents/data/templates'
+import {
+  type DocType,
+  docTypeFullLabel,
+  docTypeLabel,
+  docTypes,
+} from '@/features/documents/data/doc-type'
 import { TRMetaList } from '@/shared/components/tr-meta-list'
 import { TRDocumentView } from '@/features/documents/view/components/tr-document-view'
 import { trs } from '@/features/documents/data/trs'
@@ -97,11 +87,6 @@ import { TRStepper } from './components/tr-stepper'
 import { useTRWizard } from './store/use-tr-wizard'
 
 type StepErrors = Record<string, string>
-
-type PendingTemplateChange = {
-  institution: TRInstitution
-  templateType: TRTemplateType
-}
 
 type StepErrorState = {
   scope: string
@@ -124,17 +109,8 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
     prevStep,
     goToStep,
     updateContext,
-    changeTemplate,
+    changeDocType,
     setFieldValue,
-    addLot,
-    removeLot,
-    updateLot,
-    addLotItem,
-    updateLotItem,
-    removeLotItem,
-    addDeliveryLocation,
-    updateDeliveryLocation,
-    removeDeliveryLocation,
     saveDraft,
     startSubmission,
     completeSubmission,
@@ -158,17 +134,14 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
     toast.success(`Editando uma cópia de ${source.id}`)
   }, [duplicateFrom, seedFromDuplicate])
 
-  const template = getTemplateDefinition(
-    context.institution,
-    context.templateType
-  )
+  const template = getModelForDocType(context.docType)
   const wizardSteps = useMemo<SectionDefinition[]>(
     () => [
       {
         id: 'setup',
         title: 'Configuração do Modelo',
         description:
-          'Escolha instituição, modelo oficial e identificação básica do documento.',
+          'Escolha o tipo de documento e a identificação básica antes de preencher.',
         kind: 'fields',
         fieldIds: [],
       },
@@ -177,14 +150,13 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
     [template]
   )
   const currentSection = wizardSteps[currentStep]
-  const templateOptions = getTemplateOptions(context.institution)
-  const errorScope = `${currentStep}:${context.institution}:${context.templateType}`
+  const errorScope = `${currentStep}:${context.docType}`
   const [stepErrorState, setStepErrorState] = useState<StepErrorState>({
     scope: '',
     values: {},
   })
-  const [pendingTemplateChange, setPendingTemplateChange] =
-    useState<PendingTemplateChange | null>(null)
+  const [pendingDocTypeChange, setPendingDocTypeChange] =
+    useState<DocType | null>(null)
 
   const errors =
     stepErrorState.scope === errorScope ? stepErrorState.values : {}
@@ -198,9 +170,9 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
     () =>
       wizardSteps.map((section, index) => {
         if (index === 0) {
+          // O tipo de documento sempre tem um default selecionado, então a
+          // etapa 0 conta apenas título e unidade responsável como pendências.
           let count = 0
-          if (!context.institution) count += 1
-          if (!context.templateType) count += 1
           if (!context.title.trim()) count += 1
           if (!context.responsibleUnit.trim()) count += 1
           return count
@@ -212,36 +184,6 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
             const value = String(documentData[fieldId] ?? '').trim()
             return value ? sum : sum + 1
           }, 0)
-        }
-        if (section.kind === 'lots') {
-          const lots = (documentData.lots as TRLot[] | undefined) ?? []
-          if (lots.length === 0) return 1
-          let count = 0
-          lots.forEach((lot) => {
-            if (!lot.number.trim()) count += 1
-            if (!lot.name.trim()) count += 1
-            lot.items.forEach((item) => {
-              if (!item.location.trim()) count += 1
-              if (!item.itemCode.trim()) count += 1
-              if (!item.summary.trim()) count += 1
-              if (!item.unitMeasure.trim()) count += 1
-              if (!item.quantity.trim()) count += 1
-              if (!item.delivery.trim()) count += 1
-            })
-          })
-          return count
-        }
-        if (section.kind === 'deliveries') {
-          const deliveries =
-            (documentData.deliveries as TRDeliveryLocation[] | undefined) ?? []
-          if (deliveries.length === 0) return 1
-          let count = 0
-          deliveries.forEach((delivery) => {
-            if (!delivery.institutionUnit.trim()) count += 1
-            if (!delivery.cnpj.trim()) count += 1
-            if (!delivery.address.trim()) count += 1
-          })
-          return count
         }
         return 0
       }),
@@ -258,14 +200,13 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     params.set('step', String(currentStep + 1))
-    params.set('institution', context.institution)
-    params.set('model', context.templateType)
+    params.set('tipo', context.docType)
     window.history.replaceState(
       null,
       '',
       `${window.location.pathname}?${params.toString()}`
     )
-  }, [currentStep, context.institution, context.templateType])
+  }, [currentStep, context.docType])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -273,7 +214,7 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
 
     toast('Bem-vindo à Fase Preparatória', {
       description:
-        'Comece pela Configuração: escolha a instituição, o modelo oficial e dê um título à TR. O wizard guia o resto.',
+        'Comece pela Configuração: escolha o tipo de documento e dê um título. O wizard guia o resto.',
       duration: 8000,
     })
     window.localStorage.setItem('tr-wizard-onboarded', 'true')
@@ -349,13 +290,13 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
         }
       }
 
-      toast.error('Preencha os campos obrigatórios antes de aprovar.')
+      toast.error('Preencha os campos obrigatórios antes de concluir.')
       return
     }
 
     startSubmission()
     completeSubmission()
-    toast.success('TR aprovada.')
+    toast.success(`${docTypeLabel(context.docType)} concluído.`)
   }
 
   useEffect(() => {
@@ -404,41 +345,23 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
     nextStep()
   }
 
-  const queueTemplateChange = (
-    institution: TRInstitution,
-    templateType: TRTemplateType
-  ) => {
-    const isChanging =
-      institution !== context.institution ||
-      templateType !== context.templateType
+  const handleDocTypeSelect = (nextDocType: DocType) => {
+    if (nextDocType === context.docType) return
 
-    if (!isChanging) return
-
+    // Trocar o tipo recria o documentData. Se há dados sujos, confirmamos
+    // antes de descartar; caso contrário, trocamos direto.
     if (!isDirty) {
-      changeTemplate(institution, templateType)
+      changeDocType(nextDocType)
       return
     }
 
-    setPendingTemplateChange({ institution, templateType })
+    setPendingDocTypeChange(nextDocType)
   }
 
-  const handleInstitutionChange = (value: string) => {
-    const institution = value as TRInstitution
-    const nextTemplateType = getDefaultTemplateForInstitution(institution)
-    queueTemplateChange(institution, nextTemplateType)
-  }
-
-  const handleTemplateChange = (value: string) => {
-    queueTemplateChange(context.institution, value as TRTemplateType)
-  }
-
-  const applyPendingTemplateChange = () => {
-    if (!pendingTemplateChange) return
-    changeTemplate(
-      pendingTemplateChange.institution,
-      pendingTemplateChange.templateType
-    )
-    setPendingTemplateChange(null)
+  const applyPendingDocTypeChange = () => {
+    if (!pendingDocTypeChange) return
+    changeDocType(pendingDocTypeChange)
+    setPendingDocTypeChange(null)
   }
 
   const renderSummaryPanel = ({
@@ -473,10 +396,10 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
           <TRMetaList
             items={[
               {
-                label: 'Modelo institucional',
+                label: 'Tipo de documento',
                 valueNode: (
                   <>
-                    <span translate='no'>{context.institution}</span>
+                    <span translate='no'>{docTypeLabel(context.docType)}</span>
                     <span
                       className='mx-1 text-muted-foreground'
                       aria-hidden='true'
@@ -579,7 +502,7 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
             </div>
             <div className='min-w-0'>
               <h1 className='text-balance text-base font-semibold tracking-tight'>
-                Criação de TR com modelos oficiais
+                Criação de documento da fase preparatória
               </h1>
               <p className='line-clamp-2 text-pretty text-xs text-muted-foreground'>
                 {currentSection.description}
@@ -694,10 +617,8 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
                 <SetupStep
                   context={context}
                   templateIntro={template.intro}
-                  templateOptions={templateOptions}
                   errors={errors}
-                  onInstitutionChange={handleInstitutionChange}
-                  onTemplateChange={handleTemplateChange}
+                  onDocTypeSelect={handleDocTypeSelect}
                   onContextChange={updateContext}
                 />
               ) : currentSection.kind === 'fields' ? (
@@ -711,29 +632,6 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
                   onChange={setFieldValue}
                   onFieldBlur={handleFieldBlur}
                   onFieldFocus={handleFieldFocus}
-                />
-              ) : currentSection.kind === 'lots' ? (
-                <LotsSection
-                  lots={(documentData.lots as TRLot[] | undefined) ?? []}
-                  errors={errors}
-                  onAddLot={addLot}
-                  onRemoveLot={removeLot}
-                  onUpdateLot={updateLot}
-                  onAddLotItem={addLotItem}
-                  onUpdateLotItem={updateLotItem}
-                  onRemoveLotItem={removeLotItem}
-                />
-              ) : currentSection.kind === 'deliveries' ? (
-                <DeliveriesSection
-                  deliveries={
-                    (documentData.deliveries as
-                      | TRDeliveryLocation[]
-                      | undefined) ?? []
-                  }
-                  errors={errors}
-                  onAddDelivery={addDeliveryLocation}
-                  onUpdateDelivery={updateDeliveryLocation}
-                  onRemoveDelivery={removeDeliveryLocation}
                 />
               ) : (
                 <ReviewSection
@@ -789,9 +687,9 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
                 </div>
                 <div className='text-sm text-muted-foreground'>
                   {submission.status === 'completed'
-                    ? 'TR aprovado com base no modelo oficial selecionado.'
+                    ? `${docTypeLabel(context.docType)} concluído com base no modelo selecionado.`
                     : reviewState.isReady
-                      ? 'Tudo pronto para aprovar e finalizar o TR.'
+                      ? `Tudo pronto para concluir o ${docTypeLabel(context.docType)}.`
                       : 'Preencha os blocos obrigatórios. O checklist será atualizado automaticamente.'}
                 </div>
               </div>
@@ -834,8 +732,8 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
                       <CheckCircle2 data-icon='inline-start' />
                     )}
                     {submission.status === 'submitting'
-                      ? 'Aprovando…'
-                      : 'Aprovar TR'}
+                      ? 'Concluindo…'
+                      : `Concluir ${docTypeLabel(context.docType)}`}
                   </Button>
                 ) : (
                   <Button
@@ -854,17 +752,18 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
       </Main>
 
       <AlertDialog
-        open={Boolean(pendingTemplateChange)}
+        open={Boolean(pendingDocTypeChange)}
         onOpenChange={(open) => {
-          if (!open) setPendingTemplateChange(null)
+          if (!open) setPendingDocTypeChange(null)
         }}
       >
         <AlertDialogContent className='rounded-2xl'>
           <AlertDialogHeader>
-            <AlertDialogTitle>Trocar instituição ou modelo?</AlertDialogTitle>
+            <AlertDialogTitle>Trocar o tipo de documento?</AlertDialogTitle>
             <AlertDialogDescription>
-              O wizard preserva apenas os campos compatíveis entre os modelos.
-              Os dados específicos do modelo atual podem ser limpos nessa troca.
+              Trocar o tipo de documento descarta o que foi preenchido. Os
+              campos comuns compatíveis são preservados; o restante é limpo.
+              Continuar?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -873,9 +772,9 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
             </AlertDialogCancel>
             <AlertDialogAction
               className='rounded-xl'
-              onClick={applyPendingTemplateChange}
+              onClick={applyPendingDocTypeChange}
             >
-              Trocar modelo
+              Trocar tipo de documento
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -884,27 +783,31 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
   )
 }
 
+const docTypeIcons: Record<
+  DocType,
+  React.ComponentType<{ className?: string }>
+> = {
+  dfd: FileText,
+  etp: FileSpreadsheet,
+  tr: FileCheck2,
+}
+
 function SetupStep({
   context,
   templateIntro,
-  templateOptions,
   errors,
-  onInstitutionChange,
-  onTemplateChange,
+  onDocTypeSelect,
   onContextChange,
 }: {
   context: {
-    institution: TRInstitution
-    templateType: string
+    docType: DocType
     title: string
     responsibleUnit: string
     referenceCode: string
   }
   templateIntro: string
-  templateOptions: Array<{ label: string; value: string }>
   errors: StepErrors
-  onInstitutionChange: (value: string) => void
-  onTemplateChange: (value: string) => void
+  onDocTypeSelect: (docType: DocType) => void
   onContextChange: (
     values: Partial<{
       title: string
@@ -938,170 +841,168 @@ function SetupStep({
         <AlertDescription>{templateIntro}</AlertDescription>
       </Alert>
 
-      <div className='grid gap-6 md:grid-cols-2'>
-        <Card className='rounded-2xl border-0 shadow-border'>
-          <CardHeader className='space-y-1.5'>
-            <p className='text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase'>
-              Modelo
-            </p>
-            <CardTitle className='text-base'>Estrutura do documento</CardTitle>
-            <CardDescription>
-              Defina a família institucional e a forma oficial do TR antes do
-              preenchimento.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className='grid gap-6 md:grid-cols-2'>
-            <FieldBlock
-              label='Instituição'
-              htmlFor='institution'
-              error={errors.institution}
-              required
-            >
-              <Select
-                value={context.institution}
-                onValueChange={onInstitutionChange}
-              >
-                <SelectTrigger
-                  id='institution'
-                  name='institution'
-                  data-field-id='institution'
-                  className='rounded-xl'
-                  {...ariaFor('institution', { required: true })}
+      <Card className='rounded-2xl border-0 shadow-border'>
+        <CardHeader className='space-y-1.5'>
+          <p className='text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase'>
+            Modelo
+          </p>
+          <CardTitle className='text-base'>Tipo de documento</CardTitle>
+          <CardDescription>
+            Escolha o documento da cadeia DFD - ETP - TR. Cada tipo abre uma
+            estrutura própria de etapas e campos.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div
+            role='radiogroup'
+            aria-label='Tipo de documento'
+            className='grid gap-3 sm:grid-cols-3'
+          >
+            {docTypes.map((type) => {
+              const Icon = docTypeIcons[type]
+              const isSelected = context.docType === type
+              return (
+                <button
+                  key={type}
+                  type='button'
+                  role='radio'
+                  aria-checked={isSelected}
+                  data-field-id={`docType-${type}`}
+                  onClick={() => onDocTypeSelect(type)}
+                  className={[
+                    'group relative flex min-h-[112px] flex-col items-start gap-2 rounded-2xl border bg-background p-4 text-left transition-colors duration-200',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                    isSelected
+                      ? 'border-primary ring-1 ring-primary'
+                      : 'border-border hover:border-primary/40',
+                  ].join(' ')}
                 >
-                  <SelectValue placeholder='Selecione a instituição' />
-                </SelectTrigger>
-                <SelectContent>
-                  {getInstitutionOptions().map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FieldBlock>
+                  <div className='flex w-full items-start justify-between gap-2'>
+                    <span
+                      className={[
+                        'flex size-9 items-center justify-center rounded-lg',
+                        isSelected
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-muted text-muted-foreground',
+                      ].join(' ')}
+                    >
+                      <Icon className='size-4' />
+                    </span>
+                    {isSelected ? (
+                      <span className='flex items-center gap-1 text-xs font-medium text-primary'>
+                        <Check aria-hidden='true' className='size-3.5' />
+                        Selecionado
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className='space-y-0.5'>
+                    <span
+                      translate='no'
+                      className='block text-sm font-semibold tracking-tight'
+                    >
+                      {docTypeLabel(type)}
+                    </span>
+                    <span className='block text-pretty text-xs text-muted-foreground'>
+                      {docTypeFullLabel(type)}
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
-            <FieldBlock
-              label='Modelo oficial'
-              htmlFor='templateType'
-              error={errors.templateType}
-              required
-              tip='Cada modelo (consultoria, capacitações, locação, etc.) abre uma estrutura diferente de etapas e campos obrigatórios. Você pode trocar depois, mas dados específicos podem ser perdidos.'
-            >
-              <Select
-                value={context.templateType}
-                onValueChange={onTemplateChange}
-              >
-                <SelectTrigger
-                  id='templateType'
-                  name='templateType'
-                  data-field-id='templateType'
-                  className='rounded-xl'
-                  {...ariaFor('templateType', { required: true })}
-                >
-                  <SelectValue placeholder='Selecione o modelo' />
-                </SelectTrigger>
-                <SelectContent>
-                  {templateOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FieldBlock>
-          </CardContent>
-        </Card>
+      <Card className='rounded-2xl border-0 shadow-border'>
+        <CardHeader className='space-y-1.5'>
+          <p className='text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase'>
+            Identificação
+          </p>
+          <CardTitle className='text-base'>Identificação básica</CardTitle>
+          <CardDescription>
+            Esses dados acompanham toda a jornada e aparecem na revisão final.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='grid gap-6 md:grid-cols-2'>
+          <FieldBlock
+            label='Título do documento'
+            htmlFor='title'
+            error={errors.title}
+            required
+            description='Aparece no documento final e na fila de revisão. Use o objeto + público-alvo (ex.: "Aquisição de mobiliário para unidades de atendimento").'
+          >
+            <Input
+              id='title'
+              name='title'
+              data-field-id='title'
+              autoComplete='off'
+              placeholder='Ex.: Aquisição de mobiliário para unidades de atendimento'
+              value={context.title}
+              onChange={(event) =>
+                onContextChange({ title: event.target.value })
+              }
+              className='rounded-xl'
+              {...ariaFor('title', { required: true, description: true })}
+            />
+          </FieldBlock>
 
-        <Card className='rounded-2xl border-0 shadow-border'>
-          <CardHeader className='space-y-1.5'>
-            <p className='text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase'>
-              Identificação
-            </p>
-            <CardTitle className='text-base'>Identificação básica</CardTitle>
-            <CardDescription>
-              Esses dados acompanham toda a jornada e aparecem na revisão final.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className='grid gap-6'>
-            <FieldBlock
-              label='Título da TR'
-              htmlFor='title'
-              error={errors.title}
-              required
-              description='Aparece no documento final e na fila de revisão. Use o objeto + público-alvo (ex.: "Consultoria para internacionalização industrial").'
+          <FieldBlock
+            label='Unidade responsável'
+            htmlFor='responsibleUnit'
+            error={errors.responsibleUnit}
+            required
+            description='Área que conduz a contratação e responde pelo documento.'
+          >
+            <Select
+              value={context.responsibleUnit}
+              onValueChange={(value) =>
+                onContextChange({ responsibleUnit: value })
+              }
             >
-              <Input
-                id='title'
-                name='title'
-                data-field-id='title'
-                autoComplete='off'
-                placeholder='Ex.: Consultoria para internacionalização industrial'
-                value={context.title}
-                onChange={(event) =>
-                  onContextChange({ title: event.target.value })
-                }
+              <SelectTrigger
+                id='responsibleUnit'
+                name='responsibleUnit'
+                data-field-id='responsibleUnit'
                 className='rounded-xl'
-                {...ariaFor('title', { required: true, description: true })}
-              />
-            </FieldBlock>
-
-            <FieldBlock
-              label='Unidade responsável'
-              htmlFor='responsibleUnit'
-              error={errors.responsibleUnit}
-              required
-              description='Área que conduz a contratação e responde pelo TR.'
-            >
-              <Select
-                value={context.responsibleUnit}
-                onValueChange={(value) =>
-                  onContextChange({ responsibleUnit: value })
-                }
+                {...ariaFor('responsibleUnit', {
+                  required: true,
+                  description: true,
+                })}
               >
-                <SelectTrigger
-                  id='responsibleUnit'
-                  name='responsibleUnit'
-                  data-field-id='responsibleUnit'
-                  className='rounded-xl'
-                  {...ariaFor('responsibleUnit', {
-                    required: true,
-                    description: true,
-                  })}
-                >
-                  <SelectValue placeholder='Selecione a unidade' />
-                </SelectTrigger>
-                <SelectContent>
-                  {getResponsibleUnitOptions().map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FieldBlock>
+                <SelectValue placeholder='Selecione a unidade' />
+              </SelectTrigger>
+              <SelectContent>
+                {getResponsibleUnitOptions().map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FieldBlock>
 
-            <FieldBlock
-              label='Código de referência'
-              htmlFor='referenceCode'
-              tip='Opcional. Use o código interno usado pela sua unidade (ex.: TR-2026-021) para facilitar o rastreamento.'
-            >
-              <Input
-                id='referenceCode'
-                name='referenceCode'
-                data-field-id='referenceCode'
-                autoComplete='off'
-                placeholder='Ex.: TR-2026-021'
-                value={context.referenceCode}
-                onChange={(event) =>
-                  onContextChange({ referenceCode: event.target.value })
-                }
-                className='rounded-xl'
-                {...ariaFor('referenceCode')}
-              />
-            </FieldBlock>
-          </CardContent>
-        </Card>
-      </div>
+          <FieldBlock
+            label='Código de referência'
+            htmlFor='referenceCode'
+            className='md:col-span-2'
+            tip='Opcional. Use o código interno usado pela sua unidade (ex.: DFD-2026-021) para facilitar o rastreamento.'
+          >
+            <Input
+              id='referenceCode'
+              name='referenceCode'
+              data-field-id='referenceCode'
+              autoComplete='off'
+              placeholder='Ex.: DFD-2026-021'
+              value={context.referenceCode}
+              onChange={(event) =>
+                onContextChange({ referenceCode: event.target.value })
+              }
+              className='rounded-xl'
+              {...ariaFor('referenceCode')}
+            />
+          </FieldBlock>
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -1144,586 +1045,6 @@ function FieldSection({
           />
         ))}
       </div>
-    </div>
-  )
-}
-
-function LotsSection({
-  lots,
-  errors,
-  onAddLot,
-  onRemoveLot,
-  onUpdateLot,
-  onAddLotItem,
-  onUpdateLotItem,
-  onRemoveLotItem,
-}: {
-  lots: TRLot[]
-  errors: StepErrors
-  onAddLot: () => void
-  onRemoveLot: (lotId: string) => void
-  onUpdateLot: (
-    lotId: string,
-    values: Partial<Omit<TRLot, 'items' | 'id'>>
-  ) => void
-  onAddLotItem: (lotId: string) => void
-  onUpdateLotItem: (
-    lotId: string,
-    itemId: string,
-    values: Partial<Omit<TRLotItem, 'id'>>
-  ) => void
-  onRemoveLotItem: (lotId: string, itemId: string) => void
-}) {
-  return (
-    <div className='space-y-5'>
-      <Alert>
-        <ClipboardList aria-hidden='true' className='size-4' />
-        <AlertTitle>Matriz principal do SESI</AlertTitle>
-        <AlertDescription>
-          Cada linha deve reproduzir a lógica do TR oficial: lote,
-          unidade/endereço, item, especificação, unidade, quantidade total e
-          entrega.
-        </AlertDescription>
-      </Alert>
-
-      {lots.map((lot, index) => (
-        <Card
-          key={lot.id}
-          className='rounded-2xl border-0 shadow-border'
-        >
-          <CardHeader>
-            <div className='flex flex-wrap items-center justify-between gap-3'>
-              <div>
-                <CardTitle className='text-base'>Lote {index + 1}</CardTitle>
-                <CardDescription>
-                  Identifique o lote e estruture os itens vinculados a ele.
-                </CardDescription>
-              </div>
-              <Button
-                type='button'
-                variant='outline'
-                onClick={() => onRemoveLot(lot.id)}
-              >
-                <Trash2 data-icon='inline-start' />
-                Remover lote
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className='space-y-5'>
-            <div className='grid gap-4 md:grid-cols-2'>
-              <FieldBlock
-                label='Nº lote'
-                htmlFor={`lot-${lot.id}-number`}
-                error={errors[`lot-${lot.id}-number`]}
-              >
-                <Input
-                  id={`lot-${lot.id}-number`}
-                  name={`lot-${lot.id}-number`}
-                  data-field-id={`lot-${lot.id}-number`}
-                  autoComplete='off'
-                  placeholder='Ex.: 01'
-                  value={lot.number}
-                  onChange={(event) =>
-                    onUpdateLot(lot.id, { number: event.target.value })
-                  }
-                  className='rounded-xl'
-                />
-              </FieldBlock>
-              <FieldBlock
-                label='Lote'
-                htmlFor={`lot-${lot.id}-name`}
-                error={errors[`lot-${lot.id}-name`]}
-              >
-                <Input
-                  id={`lot-${lot.id}-name`}
-                  name={`lot-${lot.id}-name`}
-                  data-field-id={`lot-${lot.id}-name`}
-                  autoComplete='off'
-                  placeholder='Ex.: Armário expositor'
-                  value={lot.name}
-                  onChange={(event) =>
-                    onUpdateLot(lot.id, { name: event.target.value })
-                  }
-                  className='rounded-xl'
-                />
-              </FieldBlock>
-            </div>
-
-            <div className='hidden overflow-x-auto rounded-2xl border border-border/70 lg:block'>
-              <Table className='min-w-[1100px]'>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className='min-w-[200px]'>
-                      Unidade/Endereço
-                    </TableHead>
-                    <TableHead className='min-w-[120px]'>Item</TableHead>
-                    <TableHead className='min-w-[260px]'>
-                      Especificação resumida
-                    </TableHead>
-                    <TableHead className='min-w-[150px]'>
-                      Unidade de medida
-                    </TableHead>
-                    <TableHead className='min-w-[120px]'>Qtd. total</TableHead>
-                    <TableHead className='min-w-[180px]'>Entrega</TableHead>
-                    <TableHead className='w-[120px]'>Ação</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {lot.items.map((item, itemIndex) => {
-                    const rowRef = `lote ${index + 1}, item ${itemIndex + 1}`
-                    return (
-                    <TableRow key={item.id}>
-                      <TableCell className='align-top whitespace-normal'>
-                        <Input
-                          id={`lot-${lot.id}-item-${item.id}-location`}
-                          name={`lot-${lot.id}-item-${item.id}-location`}
-                          data-field-id={`lot-${lot.id}-item-${item.id}-location`}
-                          autoComplete='street-address'
-                          placeholder='Unidade ou endereço…'
-                          aria-label={`Unidade ou endereço — ${rowRef}`}
-                          value={item.location}
-                          onChange={(event) =>
-                            onUpdateLotItem(lot.id, item.id, {
-                              location: event.target.value,
-                            })
-                          }
-                        />
-                        {errors[`lot-${lot.id}-item-${item.id}-location`] ? (
-                          <p className='field-error mt-2 text-sm text-destructive'>
-                            {errors[`lot-${lot.id}-item-${item.id}-location`]}
-                          </p>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className='align-top whitespace-normal'>
-                        <Input
-                          id={`lot-${lot.id}-item-${item.id}-itemCode`}
-                          name={`lot-${lot.id}-item-${item.id}-itemCode`}
-                          data-field-id={`lot-${lot.id}-item-${item.id}-itemCode`}
-                          autoComplete='off'
-                          placeholder='Ex.: 1'
-                          aria-label={`Código do item — ${rowRef}`}
-                          value={item.itemCode}
-                          onChange={(event) =>
-                            onUpdateLotItem(lot.id, item.id, {
-                              itemCode: event.target.value,
-                            })
-                          }
-                        />
-                        {errors[`lot-${lot.id}-item-${item.id}-itemCode`] ? (
-                          <p className='field-error mt-2 text-sm text-destructive'>
-                            {errors[`lot-${lot.id}-item-${item.id}-itemCode`]}
-                          </p>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className='align-top whitespace-normal'>
-                        <Textarea
-                          id={`lot-${lot.id}-item-${item.id}-summary`}
-                          name={`lot-${lot.id}-item-${item.id}-summary`}
-                          data-field-id={`lot-${lot.id}-item-${item.id}-summary`}
-                          autoComplete='off'
-                          placeholder='Descreva o item…'
-                          aria-label={`Especificação resumida — ${rowRef}`}
-                          value={item.summary}
-                          onChange={(event) =>
-                            onUpdateLotItem(lot.id, item.id, {
-                              summary: event.target.value,
-                            })
-                          }
-                          className='min-h-24 rounded-2xl'
-                        />
-                        {errors[`lot-${lot.id}-item-${item.id}-summary`] ? (
-                          <p className='field-error mt-2 text-sm text-destructive'>
-                            {errors[`lot-${lot.id}-item-${item.id}-summary`]}
-                          </p>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className='align-top whitespace-normal'>
-                        <Input
-                          id={`lot-${lot.id}-item-${item.id}-unitMeasure`}
-                          name={`lot-${lot.id}-item-${item.id}-unitMeasure`}
-                          data-field-id={`lot-${lot.id}-item-${item.id}-unitMeasure`}
-                          autoComplete='off'
-                          placeholder='Ex.: unidade'
-                          aria-label={`Unidade de medida — ${rowRef}`}
-                          value={item.unitMeasure}
-                          onChange={(event) =>
-                            onUpdateLotItem(lot.id, item.id, {
-                              unitMeasure: event.target.value,
-                            })
-                          }
-                        />
-                        {errors[`lot-${lot.id}-item-${item.id}-unitMeasure`] ? (
-                          <p className='field-error mt-2 text-sm text-destructive'>
-                            {
-                              errors[
-                                `lot-${lot.id}-item-${item.id}-unitMeasure`
-                              ]
-                            }
-                          </p>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className='align-top whitespace-normal'>
-                        <Input
-                          id={`lot-${lot.id}-item-${item.id}-quantity`}
-                          name={`lot-${lot.id}-item-${item.id}-quantity`}
-                          data-field-id={`lot-${lot.id}-item-${item.id}-quantity`}
-                          autoComplete='off'
-                          inputMode='numeric'
-                          placeholder='0'
-                          aria-label={`Quantidade total — ${rowRef}`}
-                          value={item.quantity}
-                          onChange={(event) =>
-                            onUpdateLotItem(lot.id, item.id, {
-                              quantity: event.target.value,
-                            })
-                          }
-                        />
-                        {errors[`lot-${lot.id}-item-${item.id}-quantity`] ? (
-                          <p className='field-error mt-2 text-sm text-destructive'>
-                            {errors[`lot-${lot.id}-item-${item.id}-quantity`]}
-                          </p>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className='align-top whitespace-normal'>
-                        <Input
-                          id={`lot-${lot.id}-item-${item.id}-delivery`}
-                          name={`lot-${lot.id}-item-${item.id}-delivery`}
-                          data-field-id={`lot-${lot.id}-item-${item.id}-delivery`}
-                          autoComplete='off'
-                          placeholder='Prazo ou condição…'
-                          aria-label={`Entrega — ${rowRef}`}
-                          value={item.delivery}
-                          onChange={(event) =>
-                            onUpdateLotItem(lot.id, item.id, {
-                              delivery: event.target.value,
-                            })
-                          }
-                        />
-                        {errors[`lot-${lot.id}-item-${item.id}-delivery`] ? (
-                          <p className='field-error mt-2 text-sm text-destructive'>
-                            {errors[`lot-${lot.id}-item-${item.id}-delivery`]}
-                          </p>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className='align-top'>
-                        <Button
-                          type='button'
-                          variant='ghost'
-                          onClick={() => onRemoveLotItem(lot.id, item.id)}
-                          aria-label={`Remover ${rowRef}`}
-                        >
-                          <Trash2 aria-hidden='true' data-icon='inline-start' />
-                          Remover
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-
-            <ol
-              className='stagger-fade-in space-y-3 lg:hidden'
-              aria-label={`Itens do lote ${index + 1}`}
-            >
-              {lot.items.map((item, itemIndex) => (
-                <li key={item.id}>
-                  <Card className='rounded-2xl border-border/70'>
-                    <CardHeader className='flex-row items-center justify-between space-y-0 pb-3'>
-                      <CardTitle className='text-sm font-semibold'>
-                        Item {itemIndex + 1}
-                      </CardTitle>
-                      <Button
-                        type='button'
-                        variant='ghost'
-                        size='sm'
-                        onClick={() => onRemoveLotItem(lot.id, item.id)}
-                        aria-label={`Remover item ${itemIndex + 1} do lote ${index + 1}`}
-                        className='relative after:absolute after:inset-[-4px] after:content-[""]'
-                      >
-                        <Trash2 data-icon='inline-start' />
-                        Remover
-                      </Button>
-                    </CardHeader>
-                    <CardContent className='space-y-4'>
-                      <FieldBlock
-                        label='Unidade/Endereço'
-                        htmlFor={`lot-${lot.id}-item-${item.id}-location-m`}
-                        error={errors[`lot-${lot.id}-item-${item.id}-location`]}
-                      >
-                        <Input
-                          id={`lot-${lot.id}-item-${item.id}-location-m`}
-                          name={`lot-${lot.id}-item-${item.id}-location-m`}
-                          autoComplete='street-address'
-                          placeholder='Unidade ou endereço…'
-                          value={item.location}
-                          onChange={(event) =>
-                            onUpdateLotItem(lot.id, item.id, {
-                              location: event.target.value,
-                            })
-                          }
-                          className='rounded-xl'
-                        />
-                      </FieldBlock>
-                      <FieldBlock
-                        label='Item'
-                        htmlFor={`lot-${lot.id}-item-${item.id}-itemCode-m`}
-                        error={errors[`lot-${lot.id}-item-${item.id}-itemCode`]}
-                      >
-                        <Input
-                          id={`lot-${lot.id}-item-${item.id}-itemCode-m`}
-                          name={`lot-${lot.id}-item-${item.id}-itemCode-m`}
-                          autoComplete='off'
-                          placeholder='Ex.: 1'
-                          value={item.itemCode}
-                          onChange={(event) =>
-                            onUpdateLotItem(lot.id, item.id, {
-                              itemCode: event.target.value,
-                            })
-                          }
-                          className='rounded-xl'
-                        />
-                      </FieldBlock>
-                      <FieldBlock
-                        label='Especificação resumida'
-                        htmlFor={`lot-${lot.id}-item-${item.id}-summary-m`}
-                        error={errors[`lot-${lot.id}-item-${item.id}-summary`]}
-                      >
-                        <Textarea
-                          id={`lot-${lot.id}-item-${item.id}-summary-m`}
-                          name={`lot-${lot.id}-item-${item.id}-summary-m`}
-                          autoComplete='off'
-                          placeholder='Descreva o item…'
-                          value={item.summary}
-                          onChange={(event) =>
-                            onUpdateLotItem(lot.id, item.id, {
-                              summary: event.target.value,
-                            })
-                          }
-                          className='min-h-24 rounded-2xl'
-                        />
-                      </FieldBlock>
-                      <div className='grid gap-4 sm:grid-cols-2'>
-                        <FieldBlock
-                          label='Unidade de medida'
-                          htmlFor={`lot-${lot.id}-item-${item.id}-unitMeasure-m`}
-                          error={
-                            errors[`lot-${lot.id}-item-${item.id}-unitMeasure`]
-                          }
-                        >
-                          <Input
-                            id={`lot-${lot.id}-item-${item.id}-unitMeasure-m`}
-                            name={`lot-${lot.id}-item-${item.id}-unitMeasure-m`}
-                            autoComplete='off'
-                            placeholder='Ex.: unidade'
-                            value={item.unitMeasure}
-                            onChange={(event) =>
-                              onUpdateLotItem(lot.id, item.id, {
-                                unitMeasure: event.target.value,
-                              })
-                            }
-                            className='rounded-xl'
-                          />
-                        </FieldBlock>
-                        <FieldBlock
-                          label='Qtd. total'
-                          htmlFor={`lot-${lot.id}-item-${item.id}-quantity-m`}
-                          error={errors[`lot-${lot.id}-item-${item.id}-quantity`]}
-                        >
-                          <Input
-                            id={`lot-${lot.id}-item-${item.id}-quantity-m`}
-                            name={`lot-${lot.id}-item-${item.id}-quantity-m`}
-                            autoComplete='off'
-                            inputMode='numeric'
-                            placeholder='0'
-                            value={item.quantity}
-                            onChange={(event) =>
-                              onUpdateLotItem(lot.id, item.id, {
-                                quantity: event.target.value,
-                              })
-                            }
-                            className='rounded-xl'
-                          />
-                        </FieldBlock>
-                      </div>
-                      <FieldBlock
-                        label='Entrega'
-                        htmlFor={`lot-${lot.id}-item-${item.id}-delivery-m`}
-                        error={errors[`lot-${lot.id}-item-${item.id}-delivery`]}
-                      >
-                        <Input
-                          id={`lot-${lot.id}-item-${item.id}-delivery-m`}
-                          name={`lot-${lot.id}-item-${item.id}-delivery-m`}
-                          autoComplete='off'
-                          placeholder='Prazo ou condição…'
-                          value={item.delivery}
-                          onChange={(event) =>
-                            onUpdateLotItem(lot.id, item.id, {
-                              delivery: event.target.value,
-                            })
-                          }
-                          className='rounded-xl'
-                        />
-                      </FieldBlock>
-                    </CardContent>
-                  </Card>
-                </li>
-              ))}
-            </ol>
-
-            <Button
-              type='button'
-              variant='outline'
-              onClick={() => onAddLotItem(lot.id)}
-            >
-              <Plus data-icon='inline-start' />
-              Adicionar item ao lote
-            </Button>
-          </CardContent>
-        </Card>
-      ))}
-
-      <Button type='button' variant='outline' onClick={onAddLot}>
-        <Plus data-icon='inline-start' />
-        Adicionar novo lote
-      </Button>
-    </div>
-  )
-}
-
-function DeliveriesSection({
-  deliveries,
-  errors,
-  onAddDelivery,
-  onUpdateDelivery,
-  onRemoveDelivery,
-}: {
-  deliveries: TRDeliveryLocation[]
-  errors: StepErrors
-  onAddDelivery: () => void
-  onUpdateDelivery: (
-    deliveryId: string,
-    values: Partial<Omit<TRDeliveryLocation, 'id'>>
-  ) => void
-  onRemoveDelivery: (deliveryId: string) => void
-}) {
-  return (
-    <div className='space-y-5'>
-      <Alert>
-        <FileText aria-hidden='true' className='size-4' />
-        <AlertTitle>Tabela auxiliar de instituições</AlertTitle>
-        <AlertDescription>
-          Cadastre as unidades com CNPJ e endereço oficial. Essa tabela
-          complementa a matriz de lotes, sem substituí-la.
-        </AlertDescription>
-      </Alert>
-
-      <div className='stagger-fade-in space-y-5'>
-      {deliveries.map((delivery, index) => (
-        <Card
-          key={delivery.id}
-          className='rounded-2xl border-0 shadow-border'
-        >
-          <CardHeader>
-            <div className='flex flex-wrap items-center justify-between gap-3'>
-              <div>
-                <CardTitle className='text-base'>
-                  Instituição/Unidade {index + 1}
-                </CardTitle>
-                <CardDescription>
-                  Informe a unidade atendida, CNPJ e endereço de
-                  entrega/fornecimento.
-                </CardDescription>
-              </div>
-              <Button
-                type='button'
-                variant='outline'
-                onClick={() => onRemoveDelivery(delivery.id)}
-                aria-label={`Remover instituição/unidade ${index + 1}`}
-              >
-                <Trash2 aria-hidden='true' data-icon='inline-start' />
-                Remover
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className='grid gap-4 md:grid-cols-2'>
-            <FieldBlock
-              label='Instituição/Unidade'
-              htmlFor={`delivery-${delivery.id}-institutionUnit`}
-              error={errors[`delivery-${delivery.id}-institutionUnit`]}
-            >
-              <Input
-                id={`delivery-${delivery.id}-institutionUnit`}
-                name={`delivery-${delivery.id}-institutionUnit`}
-                data-field-id={`delivery-${delivery.id}-institutionUnit`}
-                autoComplete='organization'
-                placeholder='Ex.: SESI Paulista'
-                value={delivery.institutionUnit}
-                onChange={(event) =>
-                  onUpdateDelivery(delivery.id, {
-                    institutionUnit: event.target.value,
-                  })
-                }
-                className='rounded-xl'
-              />
-            </FieldBlock>
-
-            <FieldBlock
-              label='CNPJ'
-              htmlFor={`delivery-${delivery.id}-cnpj`}
-              error={errors[`delivery-${delivery.id}-cnpj`]}
-              description='Formato 00.000.000/0000-00'
-            >
-              <Input
-                id={`delivery-${delivery.id}-cnpj`}
-                name={`delivery-${delivery.id}-cnpj`}
-                data-field-id={`delivery-${delivery.id}-cnpj`}
-                autoComplete='off'
-                inputMode='numeric'
-                maxLength={18}
-                placeholder='00.000.000/0000-00'
-                value={delivery.cnpj}
-                onChange={(event) =>
-                  onUpdateDelivery(delivery.id, {
-                    cnpj: event.target.value,
-                  })
-                }
-                className='rounded-xl'
-                aria-describedby={`delivery-${delivery.id}-cnpj-desc${errors[`delivery-${delivery.id}-cnpj`] ? ` delivery-${delivery.id}-cnpj-error` : ''}`}
-              />
-            </FieldBlock>
-
-            <FieldBlock
-              label='Endereço'
-              htmlFor={`delivery-${delivery.id}-address`}
-              error={errors[`delivery-${delivery.id}-address`]}
-              className='md:col-span-2'
-            >
-              <Textarea
-                id={`delivery-${delivery.id}-address`}
-                name={`delivery-${delivery.id}-address`}
-                data-field-id={`delivery-${delivery.id}-address`}
-                autoComplete='street-address'
-                placeholder='Rua, número, complemento e referência…'
-                value={delivery.address}
-                onChange={(event) =>
-                  onUpdateDelivery(delivery.id, {
-                    address: event.target.value,
-                  })
-                }
-                className='min-h-24 rounded-2xl'
-              />
-            </FieldBlock>
-          </CardContent>
-        </Card>
-      ))}
-      </div>
-
-      <Button type='button' variant='outline' onClick={onAddDelivery}>
-        <Plus data-icon='inline-start' />
-        Adicionar instituição/unidade
-      </Button>
     </div>
   )
 }
@@ -1960,21 +1281,15 @@ function validateCurrentStep(
   context: {
     title: string
     responsibleUnit: string
-    templateType: string
-    institution: string
     referenceCode: string
   },
   documentData: Record<string, unknown>,
-  template: ReturnType<typeof getTemplateDefinition>
+  template: ReturnType<typeof getModelForDocType>
 ) {
   const nextErrors: StepErrors = {}
 
   if (section.id === 'setup') {
-    if (!context.institution)
-      nextErrors.institution = 'Selecione a instituição.'
-    if (!context.templateType)
-      nextErrors.templateType = 'Selecione o tipo de TR.'
-    if (!context.title.trim()) nextErrors.title = 'Informe o título da TR.'
+    if (!context.title.trim()) nextErrors.title = 'Informe o título do documento.'
     if (!context.responsibleUnit.trim()) {
       nextErrors.responsibleUnit = 'Informe a unidade responsável.'
     }
@@ -1995,66 +1310,6 @@ function validateCurrentStep(
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
       ) {
         nextErrors[field.id] = 'Informe um e-mail válido.'
-      }
-    })
-  }
-
-  if (section.kind === 'lots') {
-    const lots = (documentData.lots as TRLot[] | undefined) ?? []
-    if (!lots.length) nextErrors.lots = 'Adicione ao menos um lote.'
-
-    lots.forEach((lot) => {
-      if (!lot.number.trim())
-        nextErrors[`lot-${lot.id}-number`] = 'Informe o número do lote.'
-      if (!lot.name.trim())
-        nextErrors[`lot-${lot.id}-name`] = 'Informe o nome do lote.'
-
-      lot.items.forEach((item) => {
-        if (!item.location.trim()) {
-          nextErrors[`lot-${lot.id}-item-${item.id}-location`] =
-            'Informe a unidade ou o endereço.'
-        }
-        if (!item.itemCode.trim()) {
-          nextErrors[`lot-${lot.id}-item-${item.id}-itemCode`] =
-            'Informe o item.'
-        }
-        if (!item.summary.trim()) {
-          nextErrors[`lot-${lot.id}-item-${item.id}-summary`] =
-            'Descreva o item.'
-        }
-        if (!item.unitMeasure.trim()) {
-          nextErrors[`lot-${lot.id}-item-${item.id}-unitMeasure`] =
-            'Informe a unidade de medida.'
-        }
-        if (!item.quantity.trim()) {
-          nextErrors[`lot-${lot.id}-item-${item.id}-quantity`] =
-            'Informe a quantidade total.'
-        }
-        if (!item.delivery.trim()) {
-          nextErrors[`lot-${lot.id}-item-${item.id}-delivery`] =
-            'Informe a entrega.'
-        }
-      })
-    })
-  }
-
-  if (section.kind === 'deliveries') {
-    const deliveries =
-      (documentData.deliveries as TRDeliveryLocation[] | undefined) ?? []
-    if (!deliveries.length) {
-      nextErrors.deliveries = 'Adicione ao menos uma instituição/unidade.'
-    }
-
-    deliveries.forEach((delivery) => {
-      if (!delivery.institutionUnit.trim()) {
-        nextErrors[`delivery-${delivery.id}-institutionUnit`] =
-          'Informe a instituição ou unidade.'
-      }
-      if (!delivery.cnpj.trim()) {
-        nextErrors[`delivery-${delivery.id}-cnpj`] = 'Informe o CNPJ.'
-      }
-      if (!delivery.address.trim()) {
-        nextErrors[`delivery-${delivery.id}-address`] = 'Informe o endereço.'
       }
     })
   }

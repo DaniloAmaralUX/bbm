@@ -77,7 +77,9 @@ type FieldRecipe = {
 type TemplateFamily = 'fiepe-iel' | 'sesi'
 
 function familyForContext(context: TRWizardContext): TemplateFamily {
-  if (context.institution === 'SESI') return 'sesi'
+  // O tom da sugestão segue o tipo de documento: o TR (artefato final, mais
+  // operacional) usa o conjunto SESI; DFD e ETP usam o conjunto fiepe-iel.
+  if (context.docType === 'tr') return 'sesi'
   return 'fiepe-iel'
 }
 

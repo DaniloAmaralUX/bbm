@@ -3,6 +3,7 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { DataTableColumnHeader } from '@/shared/data-table'
 import { Badge } from '@/shared/ui/badge'
 import { Checkbox } from '@/shared/ui/checkbox'
+import { docTypeLabel } from '@/features/documents/data/doc-type'
 import {
   trNatureLabels,
   trStatusBadgeClass,
@@ -52,6 +53,19 @@ export const trsColumns: ColumnDef<TRItem>[] = [
     ),
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    accessorKey: 'docType',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Tipo' />
+    ),
+    meta: { title: 'Tipo', className: 'ps-1', tdClassName: 'ps-4' },
+    cell: ({ row }) => (
+      <Badge variant='outline' className='font-medium'>
+        {docTypeLabel(row.original.docType)}
+      </Badge>
+    ),
+    filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
   {
     accessorKey: 'title',

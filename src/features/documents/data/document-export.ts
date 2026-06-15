@@ -1,4 +1,5 @@
 import { appIdentity } from './app'
+import { docTypeFullLabel } from './doc-type'
 import { type DocumentSection } from './templates'
 import { getTRDocument } from './tr-document'
 
@@ -214,7 +215,7 @@ export function buildDocumentHtml(trId: string): {
     <div class="doc-brand">
       <span class="doc-logo-fallback">${escapeHtml(appIdentity.name)}</span>
     </div>
-    <p class="doc-eyebrow">Termo de Referência</p>
+    <p class="doc-eyebrow">${escapeHtml(docTypeFullLabel(doc.docType))}</p>
     <h1 class="doc-title">${escapeHtml(doc.title)}</h1>
     <div class="doc-meta">${meta}</div>
   </header>

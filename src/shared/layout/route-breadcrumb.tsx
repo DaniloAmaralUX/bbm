@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { getTemplateDefinition } from '@/features/documents/data/templates'
+import { getModelForDocType } from '@/features/documents/data/templates'
 import { useTRWizard } from '@/features/documents/wizard/store/use-tr-wizard'
 import {
   Breadcrumb,
@@ -44,18 +44,15 @@ function buildCrumbs(pathname: string): Crumb[] {
 
 function useWizardStepLabel(active: boolean): string | null {
   const currentStep = useTRWizard((state) => (active ? state.currentStep : 0))
-  const institution = useTRWizard((state) =>
-    active ? state.context.institution : null
-  )
-  const templateType = useTRWizard((state) =>
-    active ? state.context.templateType : null
+  const docType = useTRWizard((state) =>
+    active ? state.context.docType : null
   )
 
-  if (!active || !institution || !templateType) return null
+  if (!active || !docType) return null
   if (currentStep === 0) return 'Configuração do Modelo'
 
-  const template = getTemplateDefinition(institution, templateType)
-  return template.sections[currentStep - 1]?.title ?? null
+  const model = getModelForDocType(docType)
+  return model.sections[currentStep - 1]?.title ?? null
 }
 
 export function RouteBreadcrumb() {

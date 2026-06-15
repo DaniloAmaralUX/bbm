@@ -36,9 +36,10 @@ import {
   trAssistantActionLabels,
 } from '@/features/documents/data/tr-assistant'
 import {
-  getTemplateDefinition,
+  getModelForDocType,
   type FieldDefinition,
 } from '@/features/documents/data/templates'
+import { docTypeLabel } from '@/features/documents/data/doc-type'
 import { useTRWizard } from '../store/use-tr-wizard'
 
 const actionIcons: Record<TRAssistantAction, React.ComponentType<{ className?: string }>> = {
@@ -66,8 +67,8 @@ export function TRAIAssistant() {
   const [confirmOverwrite, setConfirmOverwrite] = useState(false)
 
   const template = useMemo(
-    () => getTemplateDefinition(context.institution, context.templateType),
-    [context.institution, context.templateType]
+    () => getModelForDocType(context.docType),
+    [context.docType]
   )
 
   const target = assistant.target
@@ -75,7 +76,7 @@ export function TRAIAssistant() {
     ? template.fields[target.fieldId]
     : undefined
   const support = getFieldSupport(field)
-  const familyLabel = context.institution === 'SESI' ? 'SESI' : 'FIEPE/IEL'
+  const familyLabel = docTypeLabel(context.docType)
 
   const currentValue = target
     ? String(documentData[target.fieldId] ?? '')
@@ -145,7 +146,7 @@ export function TRAIAssistant() {
             <CardDescription className='text-xs'>
               {target && field ? (
                 <>
-                  Padrão <span translate='no'>{familyLabel}</span>. As sugestões
+                  Tipo <span translate='no'>{familyLabel}</span>. As sugestões
                   são determinísticas e ficam restritas a este campo.
                 </>
               ) : (
@@ -159,7 +160,7 @@ export function TRAIAssistant() {
           {!target ? (
             <p className='rounded-xl border border-dashed border-primary/20 bg-background/60 px-3 py-4 text-xs text-muted-foreground'>
               Clique em um campo de texto para selecioná-lo. A IA fica
-              indisponível em selects, datas, lotes e revisão.
+              indisponível em selects, datas e revisão.
             </p>
           ) : support !== 'narrative' ? (
             <Alert>

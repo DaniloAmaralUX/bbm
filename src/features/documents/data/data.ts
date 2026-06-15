@@ -63,11 +63,31 @@ export const trStatusBadgeClass: Record<string, string> = Object.fromEntries(
 )
 
 export const trUnits = [
-  { label: 'SENAI', value: 'SENAI' as const, icon: ArrowRight },
-  { label: 'SESI', value: 'SESI' as const, icon: ArrowRight },
-  { label: 'IEL', value: 'IEL' as const, icon: ArrowRight },
-  { label: 'FIEPE', value: 'FIEPE' as const, icon: ArrowRight },
-  { label: 'CIEPE', value: 'CIEPE' as const, icon: ArrowRight },
+  {
+    label: 'Secretaria de Administração',
+    value: 'Secretaria de Administração' as const,
+    icon: ArrowRight,
+  },
+  {
+    label: 'Secretaria de Educação',
+    value: 'Secretaria de Educação' as const,
+    icon: ArrowRight,
+  },
+  {
+    label: 'Secretaria de Saúde',
+    value: 'Secretaria de Saúde' as const,
+    icon: ArrowRight,
+  },
+  {
+    label: 'Secretaria de Infraestrutura',
+    value: 'Secretaria de Infraestrutura' as const,
+    icon: ArrowRight,
+  },
+  {
+    label: 'Procuradoria-Geral',
+    value: 'Procuradoria-Geral' as const,
+    icon: ArrowRight,
+  },
 ] as const
 
 export const trNatures = [

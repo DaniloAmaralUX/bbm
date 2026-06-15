@@ -1,18 +1,10 @@
 import { create } from 'zustand'
+import { type DocType } from '@/features/documents/data/doc-type'
 import {
-  type TRDeliveryLocation,
   type DocumentData,
-  type TRInstitution,
-  type TRLot,
-  type TRLotItem,
-  type TRTemplateType,
   buildReviewState,
   createDocumentData,
-  createEmptyDeliveryLocation,
-  createEmptyLot,
-  createEmptyLotItem,
-  getDefaultTemplateForInstitution,
-  getTemplateDefinition,
+  getModelForDocType,
   hasMeaningfulData,
 } from '@/features/documents/data/templates'
 import {
@@ -33,37 +25,13 @@ type TRWizardState = TRWizardData & {
   nextStep: () => void
   prevStep: () => void
   goToStep: (step: number) => void
-  updateContext: (
-    values: Partial<Omit<TRWizardContext, 'institution' | 'templateType'>>
-  ) => void
-  changeTemplate: (
-    institution: TRInstitution,
-    templateType?: TRTemplateType
-  ) => void
+  updateContext: (values: Partial<Omit<TRWizardContext, 'docType'>>) => void
+  changeDocType: (docType: DocType) => void
   setFieldValue: (fieldId: string, value: string) => void
   setAssistantTarget: (target: TRAssistantTarget | null) => void
   requestAssistantSuggestion: (action: TRAssistantAction) => void
   applyAssistantSuggestion: (options?: { allowOverwrite?: boolean }) => boolean
   discardAssistantSuggestion: () => void
-  addLot: () => void
-  removeLot: (lotId: string) => void
-  updateLot: (
-    lotId: string,
-    values: Partial<Omit<TRLot, 'items' | 'id'>>
-  ) => void
-  addLotItem: (lotId: string) => void
-  updateLotItem: (
-    lotId: string,
-    itemId: string,
-    values: Partial<Omit<TRLotItem, 'id'>>
-  ) => void
-  removeLotItem: (lotId: string, itemId: string) => void
-  addDeliveryLocation: () => void
-  updateDeliveryLocation: (
-    deliveryId: string,
-    values: Partial<Omit<TRDeliveryLocation, 'id'>>
-  ) => void
-  removeDeliveryLocation: (deliveryId: string) => void
   saveDraft: () => void
   startSubmission: () => void
   completeSubmission: () => void
@@ -81,24 +49,18 @@ function syncState(
   documentData: DocumentData,
   partial?: Partial<TRWizardData>
 ) {
-  const template = getTemplateDefinition(
-    context.institution,
-    context.templateType
-  )
+  const model = getModelForDocType(context.docType)
   return {
     ...partial,
     context,
     documentData,
-    reviewState: buildReviewState(context, template, documentData),
+    reviewState: buildReviewState(context, model, documentData),
   }
 }
 
 function clampStep(step: number, context: TRWizardContext) {
-  const template = getTemplateDefinition(
-    context.institution,
-    context.templateType
-  )
-  return Math.max(0, Math.min(step, template.sections.length))
+  const model = getModelForDocType(context.docType)
+  return Math.max(0, Math.min(step, model.sections.length))
 }
 
 export const useTRWizard = create<TRWizardState>()((set, get) => ({
@@ -124,17 +86,11 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
         isDirty: true,
       }
     }),
-  changeTemplate: (institution, templateType) =>
+  changeDocType: (docType) =>
     set((state) => {
-      const nextTemplateType =
-        templateType ?? getDefaultTemplateForInstitution(institution)
-      const context = {
-        ...state.context,
-        institution,
-        templateType: nextTemplateType,
-      }
-      const template = getTemplateDefinition(institution, nextTemplateType)
-      const documentData = createDocumentData(template, state.documentData)
+      const context = { ...state.context, docType }
+      const model = getModelForDocType(docType)
+      const documentData = createDocumentData(model, state.documentData)
       return {
         ...syncState(context, documentData),
         currentStep: clampStep(0, context),
@@ -177,15 +133,12 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
       })
       return
     }
-    const template = getTemplateDefinition(
-      state.context.institution,
-      state.context.templateType
-    )
-    const sectionForTarget = template.sections.find(
+    const model = getModelForDocType(state.context.docType)
+    const sectionForTarget = model.sections.find(
       (section) => section.id === target.sectionId
     )
     const currentSection =
-      sectionForTarget ?? template.sections[state.currentStep - 1]
+      sectionForTarget ?? model.sections[state.currentStep - 1]
     if (!currentSection || currentSection.kind !== 'fields') {
       set({
         assistant: {
@@ -217,7 +170,7 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
       }
       const suggestion = generateAssistantSuggestion({
         context: next.context,
-        template,
+        template: model,
         currentSection,
         fieldId: target.fieldId,
         documentData: next.documentData,
@@ -285,137 +238,6 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
         error: null,
       },
     })),
-  addLot: () =>
-    set((state) => {
-      const lots = (
-        (state.documentData.lots as TRLot[] | undefined) ?? []
-      ).concat(createEmptyLot())
-      const documentData = { ...state.documentData, lots }
-      return {
-        ...syncState(state.context, documentData),
-        isDirty: true,
-      }
-    }),
-  removeLot: (lotId) =>
-    set((state) => {
-      const currentLots = (state.documentData.lots as TRLot[] | undefined) ?? []
-      const nextLots = currentLots.filter((lot) => lot.id !== lotId)
-      const documentData = {
-        ...state.documentData,
-        lots: nextLots.length ? nextLots : [createEmptyLot()],
-      }
-      return {
-        ...syncState(state.context, documentData),
-        isDirty: true,
-      }
-    }),
-  updateLot: (lotId, values) =>
-    set((state) => {
-      const lots = ((state.documentData.lots as TRLot[] | undefined) ?? []).map(
-        (lot) => (lot.id === lotId ? { ...lot, ...values } : lot)
-      )
-      const documentData = { ...state.documentData, lots }
-      return {
-        ...syncState(state.context, documentData),
-        isDirty: true,
-      }
-    }),
-  addLotItem: (lotId) =>
-    set((state) => {
-      const lots = ((state.documentData.lots as TRLot[] | undefined) ?? []).map(
-        (lot) =>
-          lot.id === lotId
-            ? { ...lot, items: lot.items.concat(createEmptyLotItem()) }
-            : lot
-      )
-      const documentData = { ...state.documentData, lots }
-      return {
-        ...syncState(state.context, documentData),
-        isDirty: true,
-      }
-    }),
-  updateLotItem: (lotId, itemId, values) =>
-    set((state) => {
-      const lots = ((state.documentData.lots as TRLot[] | undefined) ?? []).map(
-        (lot) =>
-          lot.id === lotId
-            ? {
-                ...lot,
-                items: lot.items.map((item) =>
-                  item.id === itemId ? { ...item, ...values } : item
-                ),
-              }
-            : lot
-      )
-      const documentData = { ...state.documentData, lots }
-      return {
-        ...syncState(state.context, documentData),
-        isDirty: true,
-      }
-    }),
-  removeLotItem: (lotId, itemId) =>
-    set((state) => {
-      const lots = ((state.documentData.lots as TRLot[] | undefined) ?? []).map(
-        (lot) => {
-          if (lot.id !== lotId) return lot
-          const nextItems = lot.items.filter((item) => item.id !== itemId)
-          return {
-            ...lot,
-            items: nextItems.length ? nextItems : [createEmptyLotItem()],
-          }
-        }
-      )
-      const documentData = { ...state.documentData, lots }
-      return {
-        ...syncState(state.context, documentData),
-        isDirty: true,
-      }
-    }),
-  addDeliveryLocation: () =>
-    set((state) => {
-      const deliveries = (
-        (state.documentData.deliveries as TRDeliveryLocation[] | undefined) ??
-        []
-      ).concat(createEmptyDeliveryLocation())
-      const documentData = { ...state.documentData, deliveries }
-      return {
-        ...syncState(state.context, documentData),
-        isDirty: true,
-      }
-    }),
-  updateDeliveryLocation: (deliveryId, values) =>
-    set((state) => {
-      const deliveries = (
-        (state.documentData.deliveries as TRDeliveryLocation[] | undefined) ??
-        []
-      ).map((entry) =>
-        entry.id === deliveryId ? { ...entry, ...values } : entry
-      )
-      const documentData = { ...state.documentData, deliveries }
-      return {
-        ...syncState(state.context, documentData),
-        isDirty: true,
-      }
-    }),
-  removeDeliveryLocation: (deliveryId) =>
-    set((state) => {
-      const currentDeliveries =
-        (state.documentData.deliveries as TRDeliveryLocation[] | undefined) ??
-        []
-      const nextDeliveries = currentDeliveries.filter(
-        (entry) => entry.id !== deliveryId
-      )
-      const documentData = {
-        ...state.documentData,
-        deliveries: nextDeliveries.length
-          ? nextDeliveries
-          : [createEmptyDeliveryLocation()],
-      }
-      return {
-        ...syncState(state.context, documentData),
-        isDirty: true,
-      }
-    }),
   saveDraft: () =>
     set((state) => ({
       submission: {
@@ -449,10 +271,10 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
     })),
   seedFromDuplicate: (source) =>
     set((state) => {
-      // Protótipo: as TRs da lista são registros-resumo (não guardam o
+      // Protótipo: os documentos da lista são registros-resumo (não guardam o
       // documentData completo). Carregamos os metadados disponíveis (título
-      // como "Cópia de…", unidade) e mantemos o documentData/template atual
-      // como base editável populada. Cópia campo-a-campo fiel exige backend.
+      // como "Cópia de…", unidade) e mantemos o documentData/modelo atual
+      // como base editável. Cópia campo-a-campo fiel exige backend.
       const context = {
         ...state.context,
         title: `Cópia de ${source.title}`,
