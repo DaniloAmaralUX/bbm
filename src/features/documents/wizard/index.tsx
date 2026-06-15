@@ -8,6 +8,7 @@ import {
   Pencil,
   RotateCcw,
   Save,
+  Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/shared/lib/utils'
@@ -63,6 +64,7 @@ import {
   type SectionDefinition,
   buildReviewState,
 } from '@/features/documents/data/templates'
+import { getFieldSupport } from '@/features/documents/data/tr-assistant'
 import { trs } from '@/features/documents/data/trs'
 import { useModelsStore } from '@/features/models/store/use-models-store'
 import { TRAIAssistant } from './components/tr-ai-assistant'
@@ -586,6 +588,9 @@ function FieldRow({
 }) {
   const isInherited = cell.origin === 'inherited'
   const isAdjusted = cell.origin === 'adjusted'
+  // Campos de texto recebem apoio de IA pelo painel; sinalizamos com um selo
+  // discreto para que a IA não fique escondida (a tabela de itens tem o seu).
+  const assistable = !readOnly && getFieldSupport(field) !== 'cadastral'
   const describedBy =
     [
       field.description ? `${field.id}-desc` : null,
@@ -646,6 +651,22 @@ function FieldRow({
             <Pencil aria-hidden='true' className='size-3' />
             Ajustado
           </Badge>
+        ) : null}
+        {assistable ? (
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            className='ms-auto h-6 gap-1 rounded-full px-2 text-[11px] font-semibold text-primary hover:bg-primary/10'
+            onClick={() => {
+              onFocus()
+              focusField(field.id)
+            }}
+            aria-label={`Assistência de IA para ${field.label}`}
+          >
+            <Sparkles aria-hidden='true' className='size-3' />
+            IA
+          </Button>
         ) : null}
       </div>
 
