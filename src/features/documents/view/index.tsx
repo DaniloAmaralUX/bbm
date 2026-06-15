@@ -2,8 +2,11 @@ import { Link } from '@tanstack/react-router'
 import {
   ArrowLeft,
   CheckCircle2,
+  Download,
   FilePenLine,
   FilePlus2,
+  FileText,
+  FileType,
   Link2,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -14,6 +17,12 @@ import { Alert, AlertDescription } from '@/shared/ui/alert'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/shared/ui/dropdown-menu'
 import { Separator } from '@/shared/ui/separator'
 import { SectionLabel } from '@/shared/components/section-label'
 import {
@@ -27,6 +36,10 @@ import {
   trStatusLabels,
 } from '@/features/documents/data/data'
 import { docTypeLabel } from '@/features/documents/data/doc-type'
+import {
+  downloadTRWord,
+  printTRToPdf,
+} from '@/features/documents/data/document-export'
 import { getTRById, getTRDocument } from '@/features/documents/data/tr-document'
 import { trs } from '@/features/documents/data/trs'
 import { TRDocumentToc } from './components/tr-document-toc'
@@ -74,7 +87,7 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
         {mode === 'edit' && (
           <Alert
             role='status'
-            className='border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100 [&>svg]:text-amber-700 dark:[&>svg]:text-amber-300'
+            className='border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100 print:hidden [&>svg]:text-amber-700 dark:[&>svg]:text-amber-300'
           >
             <FilePenLine aria-hidden='true' className='size-4' />
             <AlertDescription>
@@ -86,7 +99,7 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
         {/* Hero header card — consolida back link + ID + título + actions + metadados inline. */}
         <Card className='rounded-2xl border-0 shadow-border'>
           <CardContent className='space-y-5 p-6'>
-            <div className='flex flex-wrap items-center justify-between gap-3'>
+            <div className='flex flex-wrap items-center justify-between gap-3 print:hidden'>
               <Button asChild variant='ghost' className='-ml-3 rounded-xl'>
                 <Link to='/documentos'>
                   <ArrowLeft aria-hidden='true' className='size-4' />
@@ -94,6 +107,38 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
                 </Link>
               </Button>
               <div className='flex flex-wrap gap-2'>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant='outline' className='rounded-xl'>
+                      <Download aria-hidden='true' className='size-4' />
+                      Baixar documento
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='end' className='w-[180px]'>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        const opened = printTRToPdf(document.id)
+                        if (!opened) {
+                          toast.error(
+                            'Não foi possível gerar o PDF para impressão.'
+                          )
+                        }
+                      }}
+                    >
+                      <FileText aria-hidden='true' className='size-4' />
+                      PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        downloadTRWord(document.id)
+                        toast.success(`${document.id}.doc gerado`)
+                      }}
+                    >
+                      <FileType aria-hidden='true' className='size-4' />
+                      Word (.doc)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button asChild variant='outline' className='rounded-xl'>
                   <Link to='/documentos/novo'>
                     <FilePenLine aria-hidden='true' className='size-4' />
@@ -165,7 +210,9 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
         </Card>
 
         {/* Cadeia: linhagem do documento (elemento-assinatura da herança). */}
-        <TRLineageRail chain={chain} currentId={item.id} />
+        <div className='print:hidden'>
+          <TRLineageRail chain={chain} currentId={item.id} />
+        </div>
 
         {/* Herança consolidada em texto: nomeia a origem dos campos comuns. */}
         {inheritanceOrigin ? (
@@ -194,7 +241,7 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
             sections={document.sections}
             hideHeader
           />
-          <aside className='lg:sticky lg:top-20'>
+          <aside className='lg:sticky lg:top-20 print:hidden'>
             <TRDocumentToc sections={document.sections} />
           </aside>
         </div>

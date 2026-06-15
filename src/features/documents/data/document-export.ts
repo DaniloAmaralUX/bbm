@@ -85,7 +85,7 @@ const documentStyles = `
     padding: 24px;
   }
   .doc-header {
-    border-bottom: 2px solid #1f3a8a;
+    border-bottom: 2px solid #15803d;
     padding-bottom: 16px;
     margin-bottom: 28px;
   }
@@ -94,7 +94,7 @@ const documentStyles = `
     font-size: 9pt;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: #1f3a8a;
+    color: #15803d;
     font-weight: 700;
     margin: 0 0 6px;
   }
@@ -113,7 +113,7 @@ const documentStyles = `
     font-size: 12.5pt;
     font-weight: 700;
     margin: 24px 0 8px;
-    color: #1f3a8a;
+    color: #15803d;
   }
   section { break-inside: avoid; }
   p { margin: 0 0 8px; text-align: justify; }
@@ -139,7 +139,7 @@ const documentStyles = `
     vertical-align: top;
   }
   table.grid th {
-    background: #f1f4fb;
+    background: #f0fdf4;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 9.5pt;
   }
@@ -159,7 +159,7 @@ const documentStyles = `
     font-size: 16pt;
     font-weight: 800;
     letter-spacing: 0.02em;
-    color: #1f3a8a;
+    color: #15803d;
   }
   .doc-signatures { margin-top: 64px; break-inside: avoid; }
   .sign-place-date {
@@ -231,7 +231,7 @@ export function buildDocumentHtml(trId: string): {
     </div>
   </section>
   <footer class="doc-footer">
-    Documento gerado pela Fase Preparatória - protótipo de validação. Conteúdo ilustrativo.
+    ${escapeHtml(doc.id)} - ${escapeHtml(docTypeFullLabel(doc.docType))} | Documento gerado pela Fase Preparatória (protótipo de validação, conteúdo ilustrativo).
   </footer>
 </body>
 </html>`

@@ -299,3 +299,28 @@
     height: 0;
   }
 }
+
+/* Impressao (RF-13): imprime apenas o conteudo do documento (#content), sem a
+   navegacao do app (sidebar e header ficam fora de #content) nem os cromos
+   interativos marcados com `print:hidden`. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #content,
+  #content * {
+    visibility: visible;
+  }
+  #content {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    background: #fff;
+  }
+  /* Cromos interativos marcados com `print:hidden` saem da impressao. A regra e
+     definida aqui porque a variante `print:` do Tailwind nao esta sendo gerada
+     neste setup; mantem o uso de `print:hidden` no JSX funcionando. */
+  .print\:hidden {
+    display: none !important;
+  }
+}
