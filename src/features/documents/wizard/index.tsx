@@ -66,6 +66,7 @@ import {
 import { trs } from '@/features/documents/data/trs'
 import { useModelsStore } from '@/features/models/store/use-models-store'
 import { TRAIAssistant } from './components/tr-ai-assistant'
+import { TRItemsTable } from './components/tr-items-table'
 import { TRLineagePanel } from './components/tr-lineage-panel'
 import { TRStepper } from './components/tr-stepper'
 import { useTRWizard } from './store/use-tr-wizard'
@@ -546,7 +547,9 @@ function FieldSection({
               docType={docType}
               sectionId={section.id}
               className={
-                field.input === 'textarea' ? 'md:col-span-2' : undefined
+                field.input === 'textarea' || field.input === 'itemsTable'
+                  ? 'md:col-span-2'
+                  : undefined
               }
               onChange={(value) => onChange(field.id, value)}
               onRevert={() => onRevert(field.id)}
@@ -646,7 +649,13 @@ function FieldRow({
         ) : null}
       </div>
 
-      {field.input === 'select' ? (
+      {field.input === 'itemsTable' ? (
+        <TRItemsTable
+          value={cell.value}
+          onChange={(next) => onChange(next)}
+          readOnly={readOnly}
+        />
+      ) : field.input === 'select' ? (
         <Select
           value={cell.value}
           onValueChange={(next) => onChange(next)}
@@ -751,7 +760,10 @@ function validateDocument(
     if (!field.required) return
     const value = String(documentData[field.id] ?? '').trim()
     if (!value) {
-      nextErrors[field.id] = `Preencha o campo "${field.label}".`
+      nextErrors[field.id] =
+        field.input === 'itemsTable'
+          ? 'Adicione ao menos um item.'
+          : `Preencha o campo "${field.label}".`
       return
     }
     if (field.input === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {

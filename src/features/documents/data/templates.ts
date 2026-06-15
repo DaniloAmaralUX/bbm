@@ -1,6 +1,19 @@
 import { type DocType, docTypeFullLabel } from './doc-type'
+import {
+  formatBRL,
+  formatQuantity,
+  itemsTotal,
+  parseItems,
+  rowTotal,
+} from './items'
 
-export type FieldInputType = 'text' | 'textarea' | 'select' | 'date' | 'email'
+export type FieldInputType =
+  | 'text'
+  | 'textarea'
+  | 'select'
+  | 'date'
+  | 'email'
+  | 'itemsTable'
 
 export type FieldDefinition = {
   id: string
@@ -395,11 +408,11 @@ const trModel: ModelDefinition = {
     items: {
       id: 'items',
       label: 'Itens e quantidades',
-      input: 'textarea',
+      input: 'itemsTable',
       required: true,
       placeholder: 'Itens, unidades, quantidades e preços de referência…',
       description:
-        'A tabela estruturada com sugestão de itens por IA chega no PR-5/Fase 5.',
+        'Tabela de itens da contratação. Use "Sugerir itens" para o apoio de IA.',
       autocomplete: 'off',
     },
     observedMode: {
@@ -507,6 +520,33 @@ export function buildReviewState(
   }
 }
 
+/**
+ * Converte o valor (JSON) de um campo de itens numa seção `table`. Retorna null
+ * quando não há itens. Última linha = "Total geral". Reusado pela Revisão do
+ * wizard e pelo artefato (view/export).
+ */
+export function itemsToTableSection(
+  value: string,
+  title: string
+): DocumentSection | null {
+  const rows = parseItems(value)
+  if (!rows.length) return null
+  const tableRows = rows.map((row) => [
+    row.description,
+    row.unit,
+    formatQuantity(row.quantity),
+    formatBRL(row.unitPrice),
+    formatBRL(rowTotal(row)),
+  ])
+  tableRows.push(['Total geral', '', '', '', formatBRL(itemsTotal(rows))])
+  return {
+    kind: 'table',
+    title,
+    columns: ['Descrição', 'Unidade', 'Quantidade', 'Preço unitário', 'Total'],
+    rows: tableRows,
+  }
+}
+
 export function buildDocumentSections(
   context: {
     docType: DocType
@@ -539,6 +579,26 @@ export function buildDocumentSections(
       .filter(Boolean)
 
     if (!fields.length) return
+
+    const itemsField = fields.find((field) => field.input === 'itemsTable')
+    if (itemsField) {
+      const table = itemsToTableSection(
+        String(documentData[itemsField.id] ?? ''),
+        section.title
+      )
+      if (table) sections.push(table)
+      const others = fields
+        .filter((field) => field.id !== itemsField.id)
+        .map((field) => ({
+          label: field.label,
+          value: String(documentData[field.id] ?? ''),
+        }))
+        .filter((item) => hasValue(item.value))
+      if (others.length) {
+        sections.push({ kind: 'keyValue', title: 'Modalidade', items: others })
+      }
+      return
+    }
 
     if (fields.length === 1 && fields[0]?.input === 'textarea') {
       const field = fields[0]

@@ -50,6 +50,14 @@ function PreviewControl({ field }: { field: FieldDefinition }) {
       </Select>
     )
   }
+  if (field.input === 'itemsTable') {
+    return (
+      <div className='rounded-2xl border border-dashed px-4 py-3 text-sm text-muted-foreground'>
+        Tabela de itens (descrição, unidade, quantidade, preço unitário, total),
+        com sugestão por IA.
+      </div>
+    )
+  }
   return (
     <Input
       disabled
