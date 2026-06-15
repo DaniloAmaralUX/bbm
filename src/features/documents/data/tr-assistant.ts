@@ -61,7 +61,8 @@ export function getFieldSupport(
   if (
     field.input === 'select' ||
     field.input === 'date' ||
-    field.input === 'email'
+    field.input === 'email' ||
+    field.input === 'itemsTable'
   ) {
     return 'cadastral'
   }
@@ -387,19 +388,6 @@ const sesiRecipes: Record<string, FieldRecipe> = {
       title: 'Penalidades',
       content:
         'Em caso de inexecução total ou parcial, aplicam-se as penalidades previstas no padrão SESI, observado o contraditório e a ampla defesa antes de qualquer sanção.',
-    },
-  },
-  items: {
-    suggest: {
-      title: 'Itens e quantidades',
-      content:
-        'Itens estimados para "{titulo}" (preços de referência da pesquisa de mercado):\n1. [Descrição do item] - Unidade: un - Quantidade: 10 - Preço unitário: R$ 500,00 - Total: R$ 5.000,00\n2. [Descrição do item] - Unidade: serviço - Quantidade: 4 - Preço unitário: R$ 1.200,00 - Total: R$ 4.800,00\n3. [Descrição do item] - Unidade: mês - Quantidade: 12 - Preço unitário: R$ 800,00 - Total: R$ 9.600,00\nValor total estimado: R$ 19.400,00.',
-      note: 'Ajuste descrições, unidades, quantidades e preços conforme o objeto e a pesquisa.',
-    },
-    expand: {
-      title: 'Itens com critérios de medição',
-      content:
-        'Para cada item da contratação de "{titulo}", além de descrição, unidade, quantidade e preço unitário/total, defina o critério de medição e aceite:\n- Item 1: medido por entrega aceita pela {unidade}, com pagamento após atesto.\n- Item 2: medido por etapa concluída conforme o cronograma.\n- Item 3: medido por mês de prestação efetiva.\nObserve a modalidade aplicável e a faixa de preços do levantamento de mercado.',
     },
   },
 }

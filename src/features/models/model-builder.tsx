@@ -46,6 +46,7 @@ const inputTypeLabels: Record<FieldInputType, string> = {
   select: 'Seleção',
   date: 'Data',
   email: 'E-mail',
+  itemsTable: 'Tabela de itens',
 }
 
 const inputTypeOrder: FieldInputType[] = [
@@ -54,6 +55,7 @@ const inputTypeOrder: FieldInputType[] = [
   'select',
   'date',
   'email',
+  'itemsTable',
 ]
 
 function FieldEditor({
