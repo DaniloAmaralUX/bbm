@@ -70,10 +70,10 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
   const formattedDate = formatDocDate(document.updatedAt)
 
   // Último slot do grid muda conforme estado:
-  // - approved: "Aprovado em" usando updatedAt como proxy (sem campo dedicado)
+  // - concluído: "Concluído em" usando updatedAt como proxy (sem campo dedicado)
   // - rascunho: "Etapa atual" do wizard
   const lastSlot = isApproved
-    ? { label: 'Aprovado em', value: formattedDate }
+    ? { label: 'Concluído em', value: formattedDate }
     : { label: 'Etapa atual', value: document.currentStep }
 
   return (
@@ -147,10 +147,10 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
                 {!isApproved && (
                   <Button
                     className='rounded-xl'
-                    onClick={() => toast.success(`${document.id} aprovado`)}
+                    onClick={() => toast.success(`${document.id} concluído`)}
                   >
                     <CheckCircle2 aria-hidden='true' className='size-4' />
-                    Aprovar documento
+                    Concluir documento
                   </Button>
                 )}
                 {canStartChild && childType && (

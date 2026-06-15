@@ -64,7 +64,7 @@ export function TRDashboard() {
             <CardHeader className='space-y-2'>
               <SectionLabel>Status dos documentos</SectionLabel>
               <CardDescription className='text-pretty'>
-                Distribuição entre elaboração e aprovação.
+                Distribuição entre elaboração e conclusão.
               </CardDescription>
             </CardHeader>
             <CardContent>

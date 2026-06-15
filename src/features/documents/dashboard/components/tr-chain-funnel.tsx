@@ -34,7 +34,7 @@ export function TRChainFunnel({ funnel }: TRChainFunnelProps) {
           <div className='text-2xl font-semibold text-primary tabular-nums'>
             {rateFormatter.format(rate)}
           </div>
-          <div className='text-xs text-muted-foreground'>taxa de conclusão</div>
+          <div className='text-xs text-muted-foreground'>das cadeias</div>
         </div>
       </div>
 

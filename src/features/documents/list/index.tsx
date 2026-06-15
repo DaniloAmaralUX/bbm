@@ -19,7 +19,7 @@ export function TRListPage() {
               Documentos
             </h1>
             <p className='max-w-2xl text-sm text-muted-foreground'>
-              Gerencie documentos em rascunho e aprovação com filtros rápidos.
+              Gerencie documentos em rascunho e conclusão com filtros rápidos.
             </p>
           </div>
           <TRsPrimaryButtons />

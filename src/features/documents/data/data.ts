@@ -17,7 +17,7 @@ export const trStatuses = [
     icon: Circle,
   },
   {
-    label: 'Aprovado',
+    label: 'Concluído',
     value: 'approved' as const,
     icon: CheckCircle2,
   },
@@ -54,7 +54,7 @@ export const trStatusTokens: Record<TRStatus, TRStatusToken> = {
     tone: 'neutral',
   },
   approved: {
-    label: 'Aprovado',
+    label: 'Concluído',
     icon: CheckCircle2,
     badgeClass:
       'border-emerald-300/70 bg-emerald-100 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200',

@@ -15,7 +15,7 @@ import { getTRDocument } from './tr-document'
 
 const statusLabels: Record<string, string> = {
   draft: 'Rascunho',
-  approved: 'Aprovado',
+  approved: 'Concluído',
 }
 
 function escapeHtml(value: string): string {
