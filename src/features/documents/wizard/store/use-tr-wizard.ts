@@ -7,7 +7,9 @@ import {
   concludeDocument,
   inheritCommonFields,
   isDocumentLocked,
+  resolveStepModel,
   revertCellToInherited,
+  selectModelForStep,
   setCellValue,
 } from '@/features/documents/data/inheritance'
 import {
@@ -21,7 +23,6 @@ import {
   createInitialAssistantState,
   generateAssistantSuggestion,
 } from '@/features/documents/data/tr-assistant'
-import { getModelForDocType } from '@/features/models/store/use-models-store'
 import {
   createInitialTRWizardData,
   type TRWizardContext,
@@ -32,6 +33,8 @@ type TRWizardState = TRWizardData & {
   assistant: TRAssistantState
   /** Cadeia atual (atalho para `chain.current`). */
   goToDoc: (docType: DocType) => void
+  /** Troca o modelo publicado usado pelo documento corrente. */
+  selectModel: (docType: DocType, modelId: string) => void
   updateContext: (values: Partial<Omit<TRWizardContext, 'docType'>>) => void
   setFieldValue: (fieldId: string, value: string) => void
   revertField: (fieldId: string) => void
@@ -74,6 +77,13 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
         docType
       )
       return { chain, context: contextForChain(state.context, chain) }
+    }),
+  selectModel: (docType, modelId) =>
+    set((state) => {
+      if (state.chain.done[docType]) return {}
+      const chain = selectModelForStep(state.chain, docType, modelId)
+      if (chain === state.chain) return {}
+      return { chain, isDirty: true }
     }),
   updateContext: (values) =>
     set((state) => ({
@@ -140,7 +150,7 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
       })
       return
     }
-    const model = getModelForDocType(state.chain.current)
+    const model = resolveStepModel(state.chain, state.chain.current)
     const currentSection = model.sections.find(
       (section) => section.id === target.sectionId
     )
@@ -292,7 +302,7 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
 
 /** Estado de revisao do documento corrente, derivado das celulas atuais. */
 export function selectReviewState(state: TRWizardState) {
-  const model = getModelForDocType(state.chain.current)
+  const model = resolveStepModel(state.chain, state.chain.current)
   const documentData = cellsToDocumentData(
     state.chain.cells[state.chain.current]
   )

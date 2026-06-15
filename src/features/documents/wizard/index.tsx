@@ -51,14 +51,16 @@ import {
   type FieldCell,
   cellsToDocumentData,
   isDocumentLocked,
+  resolveStepModel,
 } from '@/features/documents/data/inheritance'
 import {
   type FieldDefinition,
+  type ModelDefinition,
   type SectionDefinition,
   buildReviewState,
 } from '@/features/documents/data/templates'
 import { trs } from '@/features/documents/data/trs'
-import { getModelForDocType } from '@/features/models/store/use-models-store'
+import { useModelsStore } from '@/features/models/store/use-models-store'
 import { TRAIAssistant } from './components/tr-ai-assistant'
 import { TRLineagePanel } from './components/tr-lineage-panel'
 import { TRStepper } from './components/tr-stepper'
@@ -85,9 +87,19 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
 
   const current = chain.current
   const isDone = chain.done[current]
-  const model = getModelForDocType(current)
+  const model = resolveStepModel(chain, current)
   const cells = chain.cells[current]
   const documentData = useMemo(() => cellsToDocumentData(cells), [cells])
+
+  const selectModel = useTRWizard((state) => state.selectModel)
+  const allModels = useModelsStore((state) => state.models)
+  const publishedOfType = useMemo(
+    () =>
+      allModels.filter(
+        (item) => item.docType === current && item.state === 'published'
+      ),
+    [allModels, current]
+  )
 
   const reviewState = useMemo(
     () =>
@@ -292,6 +304,33 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
                 </div>
               </CardHeader>
               <CardContent className='space-y-8'>
+                {!isDone && publishedOfType.length > 1 ? (
+                  <Field className='max-w-md'>
+                    <FieldLabel htmlFor='chain-model'>
+                      Modelo deste documento
+                    </FieldLabel>
+                    <Select
+                      value={chain.selectedModelId[current]}
+                      onValueChange={(value) => selectModel(current, value)}
+                    >
+                      <SelectTrigger id='chain-model'>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {publishedOfType.map((item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {item.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                      Há mais de um modelo publicado de {docTypeLabel(current)}.
+                      Trocar recria os campos deste documento.
+                    </FieldDescription>
+                  </Field>
+                ) : null}
+
                 {isDone ? (
                   <Alert>
                     <CheckCircle2 aria-hidden='true' className='size-4' />
@@ -331,7 +370,7 @@ export function TRWizardPage({ duplicateFrom }: TRWizardPageProps = {}) {
           </div>
 
           <aside aria-label='Herança do documento' className='space-y-6'>
-            <TRLineagePanel docType={current} cells={cells} />
+            <TRLineagePanel docType={current} cells={cells} model={model} />
           </aside>
         </div>
 
@@ -436,7 +475,7 @@ function FieldSection({
   onFieldFocus,
 }: {
   section: SectionDefinition
-  model: ReturnType<typeof getModelForDocType>
+  model: ModelDefinition
   cells: DocumentCells
   errors: StepErrors
   readOnly: boolean
@@ -674,7 +713,7 @@ function FieldRow({
 
 function validateDocument(
   documentData: Record<string, string>,
-  model: ReturnType<typeof getModelForDocType>
+  model: ModelDefinition
 ): StepErrors {
   const nextErrors: StepErrors = {}
   Object.values(model.fields).forEach((field) => {

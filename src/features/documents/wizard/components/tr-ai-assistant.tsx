@@ -31,7 +31,10 @@ import {
   trAssistantActionDescriptions,
   trAssistantActionLabels,
 } from '@/features/documents/data/tr-assistant'
-import { getModelForDocType } from '@/features/models/store/use-models-store'
+import {
+  getModelById,
+  getModelForDocType,
+} from '@/features/models/store/use-models-store'
 import { useTRWizard } from '../store/use-tr-wizard'
 
 const actionIcons: Record<
@@ -63,9 +66,12 @@ export function TRAIAssistant() {
 
   const [confirmOverwrite, setConfirmOverwrite] = useState(false)
 
+  const selectedModelId = useTRWizard(
+    (state) => state.chain.selectedModelId[state.chain.current]
+  )
   const template = useMemo(
-    () => getModelForDocType(context.docType),
-    [context.docType]
+    () => getModelById(selectedModelId) ?? getModelForDocType(context.docType),
+    [selectedModelId, context.docType]
   )
 
   const target = assistant.target

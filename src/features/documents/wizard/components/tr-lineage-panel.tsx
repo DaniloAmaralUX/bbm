@@ -12,7 +12,7 @@ import {
   type DocumentCells,
   type FieldOrigin,
 } from '@/features/documents/data/inheritance'
-import { getModelForDocType } from '@/features/models/store/use-models-store'
+import { type ModelDefinition } from '@/features/documents/data/templates'
 
 type LineageRow = {
   fieldId: string
@@ -29,11 +29,12 @@ type LineageRow = {
 export function TRLineagePanel({
   docType,
   cells,
+  model,
 }: {
   docType: DocType
   cells: DocumentCells
+  model: ModelDefinition
 }) {
-  const model = getModelForDocType(docType)
   const rows: LineageRow[] = []
   const seen = new Set<string>()
 

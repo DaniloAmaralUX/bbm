@@ -3,8 +3,14 @@ import {
   docTypes,
   parentOf,
 } from '@/features/documents/data/doc-type'
-import { type FieldDefinition } from '@/features/documents/data/templates'
-import { getModelForDocType } from '@/features/models/store/use-models-store'
+import {
+  type FieldDefinition,
+  type ModelDefinition,
+} from '@/features/documents/data/templates'
+import {
+  getModelById,
+  getModelForDocType,
+} from '@/features/models/store/use-models-store'
 
 /**
  * Origem do valor de um campo na cadeia DFD -> ETP -> TR.
@@ -33,11 +39,25 @@ export type ChainState = {
   done: Record<DocType, boolean>
   /** Celulas por tipo de documento. */
   cells: Record<DocType, DocumentCells>
+  /** Modelo publicado escolhido para cada tipo (id). Ha varios por tipo. */
+  selectedModelId: Record<DocType, string>
+}
+
+/**
+ * Resolve o modelo em uso para um documento da cadeia: o selecionado (se ainda
+ * existir) ou o publicado padrao do tipo. Garante retorno sempre definido.
+ */
+export function resolveStepModel(
+  state: ChainState,
+  docType: DocType
+): ModelDefinition {
+  return (
+    getModelById(state.selectedModelId[docType]) ?? getModelForDocType(docType)
+  )
 }
 
 /** Ids dos campos herdaveis (marcados `inheritable`) de um modelo. */
-export function getInheritableFieldIds(docType: DocType): string[] {
-  const model = getModelForDocType(docType)
+function inheritableFieldIds(model: ModelDefinition): string[] {
   return Object.values(model.fields)
     .filter((field) => field.inheritable)
     .map((field) => field.id)
@@ -49,14 +69,13 @@ function ownCell(value: string): FieldCell {
 }
 
 /**
- * Inicializa as celulas de um documento a partir das chaves do modelo, com os
- * valores informados em `seed` (campos sem seed comecam vazios e proprios).
+ * Inicializa as celulas de um documento a partir das chaves de um modelo, com
+ * os valores informados em `seed` (campos sem seed comecam vazios e proprios).
  */
-function createDocumentCells(
-  docType: DocType,
+function createCellsForModel(
+  model: ModelDefinition,
   seed: Record<string, string> = {}
 ): DocumentCells {
-  const model = getModelForDocType(docType)
   const cells: DocumentCells = {}
   Object.keys(model.fields).forEach((fieldId) => {
     cells[fieldId] = ownCell(seed[fieldId] ?? '')
@@ -96,8 +115,9 @@ function syncDocumentInheritance(
 ): DocumentCells {
   if (parentOf(docType) === null) return state.cells[docType]
 
+  const model = resolveStepModel(state, docType)
   const cells = { ...state.cells[docType] }
-  for (const fieldId of getInheritableFieldIds(docType)) {
+  for (const fieldId of inheritableFieldIds(model)) {
     const cell = cells[fieldId] ?? ownCell('')
     if (cell.origin === 'adjusted') continue
     const inherited = resolveInheritedValue(state, docType, fieldId)
@@ -126,6 +146,35 @@ export function inheritCommonFields(
     ...state,
     cells: { ...state.cells, [docType]: nextCells },
   }
+}
+
+/**
+ * Troca o modelo publicado usado por um documento da cadeia: recria as celulas
+ * a partir do novo modelo, preservando os valores ja digitados por id de campo,
+ * e re-sincroniza a heranca. Imutavel.
+ */
+export function selectModelForStep(
+  state: ChainState,
+  docType: DocType,
+  modelId: string
+): ChainState {
+  const model = getModelById(modelId)
+  if (!model || model.docType !== docType) return state
+
+  const previousValues: Record<string, string> = {}
+  for (const [fieldId, cell] of Object.entries(state.cells[docType] ?? {})) {
+    previousValues[fieldId] = cell.value
+  }
+
+  const next: ChainState = {
+    ...state,
+    selectedModelId: { ...state.selectedModelId, [docType]: modelId },
+    cells: {
+      ...state.cells,
+      [docType]: createCellsForModel(model, previousValues),
+    },
+  }
+  return inheritCommonFields(next, docType)
 }
 
 /**
@@ -230,6 +279,7 @@ export function originLabel(
 /**
  * Cria o estado inicial da cadeia: DFD semeado com dados realistas de
  * prefeitura; ETP e TR comecam vazios e ja recebem a heranca dos campos comuns.
+ * Cada tipo comeca com o modelo publicado padrao selecionado.
  */
 export function createInitialChainState(): ChainState {
   const dfdSeed: Record<string, string> = {
@@ -243,13 +293,20 @@ export function createInitialChainState(): ChainState {
     pcaLink: 'Item 12/2026 do Plano de Contratações Anual',
   }
 
+  const selectedModelId: Record<DocType, string> = {
+    dfd: getModelForDocType('dfd').id,
+    etp: getModelForDocType('etp').id,
+    tr: getModelForDocType('tr').id,
+  }
+
   let state: ChainState = {
     current: 'dfd',
     done: { dfd: false, etp: false, tr: false },
+    selectedModelId,
     cells: {
-      dfd: createDocumentCells('dfd', dfdSeed),
-      etp: createDocumentCells('etp'),
-      tr: createDocumentCells('tr'),
+      dfd: createCellsForModel(getModelForDocType('dfd'), dfdSeed),
+      etp: createCellsForModel(getModelForDocType('etp')),
+      tr: createCellsForModel(getModelForDocType('tr')),
     },
   }
 
