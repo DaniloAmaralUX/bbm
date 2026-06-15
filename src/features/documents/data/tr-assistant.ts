@@ -20,8 +20,7 @@ export const trAssistantActionDescriptions: Record<TRAssistantAction, string> =
       'Cria um texto base do zero para destravar o preenchimento deste campo.',
     expand:
       'Acrescenta densidade, contexto e detalhamento no que você já escreveu.',
-    rewrite:
-      'Reformula o texto atual para melhorar clareza e padronização institucional.',
+    rewrite: 'Reformula o texto atual para melhorar clareza e padronização.',
   }
 
 export type TRAssistantTarget = {
@@ -75,56 +74,56 @@ type FieldRecipe = {
   rewrite?: { title: string; content: string; note?: string }
 }
 
-type TemplateFamily = 'fiepe-iel' | 'sesi'
+type ToneFamily = 'planning' | 'operational'
 
-function familyForContext(context: TRWizardContext): TemplateFamily {
-  // O tom da sugestão segue o tipo de documento: o TR (artefato final, mais
-  // operacional) usa o conjunto SESI; DFD e ETP usam o conjunto fiepe-iel.
-  if (context.docType === 'tr') return 'sesi'
-  return 'fiepe-iel'
+function familyForContext(context: TRWizardContext): ToneFamily {
+  // O tom segue o tipo de documento: o TR (artefato final) usa um tom
+  // operacional/contratual; o DFD e o ETP usam um tom de planejamento/análise.
+  if (context.docType === 'tr') return 'operational'
+  return 'planning'
 }
 
-const fiepeIelRecipes: Record<string, FieldRecipe> = {
+const planningRecipes: Record<string, FieldRecipe> = {
   object: {
     suggest: {
-      title: 'Objeto institucional FIEPE/IEL',
+      title: 'Objeto (texto-base)',
       content:
-        'Contratação de serviço especializado para apoiar a {unidade} na execução do programa "{titulo}", com entregas formais validadas pela área demandante e aderência aos procedimentos do Sistema FIEPE.',
-      note: 'Preencha {titulo} e {unidade} com base no contexto do TR.',
+        'Contratação de serviço especializado para apoiar a {unidade} na execução de "{titulo}", com entregas formais validadas pela área demandante e aderência aos procedimentos da administração e à Lei 14.133/2021.',
+      note: 'Preencha {titulo} e {unidade} com base no contexto do documento.',
     },
     expand: {
       title: 'Objeto detalhado',
       content:
-        'Contratação de serviço especializado, com escopo previamente acordado, para apoiar a {unidade} na execução do programa "{titulo}". O fornecimento contempla planejamento, execução acompanhada, entregas formais por marco e aceite final pela área técnica, observando o padrão FIEPE/IEL para gestão de contratos.',
+        'Contratação de serviço especializado, com escopo previamente acordado, para apoiar a {unidade} na execução de "{titulo}". O fornecimento contempla planejamento, execução acompanhada, entregas formais por marco e aceite final pela área técnica, observando as boas práticas de gestão de contratos da administração pública.',
     },
     rewrite: {
-      title: 'Objeto reescrito (tom institucional)',
+      title: 'Objeto reescrito',
       content:
-        'Contratação de pessoa jurídica especializada para apoiar tecnicamente a {unidade} na execução do programa "{titulo}", em conformidade com os procedimentos vigentes do Sistema FIEPE e com aceite formal por etapa.',
+        'Contratação de pessoa jurídica especializada para apoiar tecnicamente a {unidade} na execução de "{titulo}", em conformidade com os procedimentos vigentes da administração e com aceite formal por etapa.',
     },
   },
   justification: {
     suggest: {
       title: 'Justificativa-base',
       content:
-        'A {unidade} demanda apoio especializado externo para conduzir o programa "{titulo}" com a profundidade técnica necessária, em um prazo compatível com o cronograma institucional. A contratação se justifica pela limitação de capacidade interna disponível e pelo grau de especialização exigido pela entrega.',
+        'A {unidade} demanda apoio especializado externo para conduzir "{titulo}" com a profundidade técnica necessária, em um prazo compatível com o cronograma da contratação. A contratação se justifica pela limitação de capacidade interna disponível e pelo grau de especialização exigido pela entrega.',
     },
     expand: {
       title: 'Justificativa detalhada',
       content:
-        'A {unidade} identificou a necessidade de apoio especializado externo para conduzir o programa "{titulo}" porque (a) a expertise requerida não está disponível em volume suficiente na equipe interna no horizonte do cronograma; (b) o objeto exige metodologia específica e visão independente para evitar viés institucional; (c) a operação atual da unidade não absorveria essa demanda sem comprometer atividades em curso. A contratação garante velocidade, qualidade técnica e aderência ao padrão FIEPE.',
+        'A {unidade} identificou a necessidade de apoio especializado externo para conduzir "{titulo}" porque (a) a expertise requerida não está disponível em volume suficiente na equipe interna no horizonte do cronograma; (b) o objeto exige metodologia específica e visão independente; (c) a operação atual da unidade não absorveria essa demanda sem comprometer atividades em curso. A contratação garante velocidade, qualidade técnica e aderência aos requisitos definidos.',
     },
     rewrite: {
       title: 'Justificativa reescrita',
       content:
-        'Justifica-se a contratação pela necessidade de apoio técnico especializado para a execução do programa "{titulo}" pela {unidade}, considerando a maturidade exigida, o cronograma institucional e a indisponibilidade equivalente de capacidade interna no período.',
+        'Justifica-se a contratação pela necessidade de apoio técnico especializado para a execução de "{titulo}" pela {unidade}, considerando a maturidade exigida, o cronograma e a indisponibilidade equivalente de capacidade interna no período.',
     },
   },
   serviceSummary: {
     suggest: {
       title: 'Resumo executivo do serviço',
       content:
-        'O serviço deve cobrir planejamento, execução técnica acompanhada, entregas formais por marco e validação com a {unidade}, mantendo o ritmo institucional combinado e a documentação consolidada para a revisão jurídica.',
+        'O serviço deve cobrir planejamento, execução técnica acompanhada, entregas formais por marco e validação com a {unidade}, mantendo o ritmo combinado e a documentação consolidada para a revisão jurídica.',
     },
     expand: {
       title: 'Resumo executivo ampliado',
@@ -134,7 +133,7 @@ const fiepeIelRecipes: Record<string, FieldRecipe> = {
     rewrite: {
       title: 'Resumo executivo reescrito',
       content:
-        'A prestação contempla planejamento, execução técnica acompanhada, entregas por marco e aceite final pela {unidade}, com documentação institucional consolidada ao longo do contrato.',
+        'A prestação contempla planejamento, execução técnica acompanhada, entregas por marco e aceite final pela {unidade}, com documentação consolidada ao longo do contrato.',
     },
   },
   scopeSteps: {
@@ -146,7 +145,7 @@ const fiepeIelRecipes: Record<string, FieldRecipe> = {
     expand: {
       title: 'Escopo em etapas (expandido)',
       content:
-        '1. Kick-off com a {unidade}: pactuação de premissas, papéis e cronograma.\n2. Levantamento documental: revisão de materiais existentes e bibliografia interna.\n3. Entrevistas com áreas-chave: validação qualitativa de hipóteses.\n4. Diagnóstico consolidado: síntese de achados, gaps e oportunidades.\n5. Oficina de priorização com lideranças.\n6. Desenho do plano de ação: marcos, responsáveis e métricas.\n7. Apresentação final para a diretoria com aceite formal.',
+        '1. Kick-off com a {unidade}: pactuação de premissas, papéis e cronograma.\n2. Levantamento documental: revisão de materiais existentes.\n3. Entrevistas com áreas-chave: validação qualitativa de hipóteses.\n4. Diagnóstico consolidado: síntese de achados, gaps e oportunidades.\n5. Oficina de priorização com lideranças.\n6. Desenho do plano de ação: marcos, responsáveis e métricas.\n7. Apresentação final com aceite formal.',
     },
     rewrite: {
       title: 'Escopo reescrito',
@@ -158,31 +157,31 @@ const fiepeIelRecipes: Record<string, FieldRecipe> = {
     suggest: {
       title: 'Entregáveis finais',
       content:
-        'Relatório executivo consolidado, plano de ação com responsáveis e prazos, materiais de apresentação para a diretoria e arquivos-fonte editáveis utilizados durante a execução.',
+        'Relatório executivo consolidado, plano de ação com responsáveis e prazos, materiais de apresentação e arquivos-fonte editáveis utilizados durante a execução.',
     },
     expand: {
       title: 'Entregáveis finais (detalhado)',
       content:
-        'Relatório executivo consolidado em formato editável, plano de ação com marcos, responsáveis e métricas mensuráveis, materiais de apresentação preparados para a diretoria, arquivos-fonte de todas as oficinas e entrevistas, e um sumário de continuidade indicando próximos passos pós-contrato.',
+        'Relatório executivo consolidado em formato editável, plano de ação com marcos, responsáveis e métricas mensuráveis, materiais de apresentação, arquivos-fonte de oficinas e entrevistas, e um sumário de continuidade indicando próximos passos pós-contrato.',
     },
   },
   hiringRequirements: {
     suggest: {
-      title: 'Requisitos de contratação (FIEPE/IEL)',
+      title: 'Requisitos de contratação',
       content:
-        'Comprovação de experiência prévia em projetos de natureza equivalente, portfólio com casos similares, equipe técnica sênior atribuída ao contrato, disponibilidade para o cronograma e regularidade fiscal exigida pelo Sistema FIEPE.',
+        'Comprovação de experiência prévia em projetos de natureza equivalente, portfólio com casos similares, equipe técnica sênior atribuída ao contrato, disponibilidade para o cronograma e regularidade fiscal exigida pela legislação.',
     },
     rewrite: {
       title: 'Requisitos reescritos',
       content:
-        'A contratada deve comprovar experiência em objetos similares, apresentar portfólio coerente, alocar equipe sênior dedicada, atender ao cronograma proposto e manter a regularidade fiscal exigida pelo Sistema FIEPE durante toda a vigência.',
+        'A contratada deve comprovar experiência em objetos similares, apresentar portfólio coerente, alocar equipe sênior dedicada, atender ao cronograma proposto e manter a regularidade fiscal exigida em lei durante toda a vigência.',
     },
   },
   monitoringNotes: {
     suggest: {
       title: 'Observações de acompanhamento',
       content:
-        'A execução será acompanhada por ritos quinzenais com a {unidade}, validação formal de marcos, registro institucional dos aceites e abertura imediata de tratativas em caso de desvio de escopo, prazo ou qualidade.',
+        'A execução será acompanhada por ritos quinzenais com a {unidade}, validação formal de marcos, registro dos aceites e abertura imediata de tratativas em caso de desvio de escopo, prazo ou qualidade.',
     },
   },
   paymentMilestones: {
@@ -201,21 +200,21 @@ const fiepeIelRecipes: Record<string, FieldRecipe> = {
     suggest: {
       title: 'Condições gerais',
       content:
-        'Entregas sujeitas a validação formal pela {unidade}, com possibilidade de ajustes antes do aceite final. Vigência e demais cláusulas seguem o padrão institucional do Sistema FIEPE aplicável a este modelo.',
+        'Entregas sujeitas a validação formal pela {unidade}, com possibilidade de ajustes antes do aceite final. Vigência e demais cláusulas seguem as condições padrão da administração aplicáveis a este modelo.',
     },
   },
   invoiceGuidance: {
     suggest: {
       title: 'Diretrizes de faturamento',
       content:
-        'A nota fiscal deve referenciar o instrumento contratual, o programa "{titulo}", o marco entregue e a {unidade} demandante, com descrição clara do escopo realizado no período.',
+        'A nota fiscal deve referenciar o instrumento contratual, o objeto "{titulo}", o marco entregue e a {unidade} demandante, com descrição clara do escopo realizado no período.',
     },
   },
   programPeriod: {
     suggest: {
       title: 'Período de execução',
       content:
-        'Sugestão: defina mês de início e fim observando o cronograma anual da {unidade} e os marcos de entrega previstos. Ex.: "Agosto a novembro de 2026".',
+        'Sugestão: defina mês de início e fim observando o cronograma da {unidade} e os marcos de entrega previstos. Ex.: "Agosto a novembro de 2026".',
     },
   },
   workload: {
@@ -240,36 +239,36 @@ const fiepeIelRecipes: Record<string, FieldRecipe> = {
   },
 }
 
-const sesiRecipes: Record<string, FieldRecipe> = {
+const operationalRecipes: Record<string, FieldRecipe> = {
   object: {
     suggest: {
-      title: 'Objeto SESI',
+      title: 'Objeto (texto-base)',
       content:
-        'Aquisição/contratação para atender à demanda "{titulo}" da {unidade}, em estrita conformidade com o modelo oficial SESI, com lotes, especificações técnicas e condições contratuais formalmente definidos.',
+        'Aquisição/contratação para atender à demanda "{titulo}" da {unidade}, em conformidade com a Lei 14.133/2021, com lotes, especificações técnicas e condições contratuais formalmente definidos.',
     },
     rewrite: {
-      title: 'Objeto reescrito (SESI)',
+      title: 'Objeto reescrito',
       content:
-        'Objeto: atendimento à demanda "{titulo}" pela {unidade}, conforme padrão SESI e respectivos lotes definidos neste TR.',
+        'Objeto: atendimento à demanda "{titulo}" pela {unidade}, conforme o modelo oficial e respectivos lotes definidos neste documento.',
     },
   },
   objective: {
     suggest: {
       title: 'Objetivo do contrato',
       content:
-        'Garantir o atendimento técnico e operacional adequado da {unidade} para o objeto descrito, observando lotes, especificações e cronograma estabelecidos neste TR.',
+        'Garantir o atendimento técnico e operacional adequado da {unidade} para o objeto descrito, observando lotes, especificações e cronograma estabelecidos neste documento.',
     },
   },
   hiringJustification: {
     suggest: {
-      title: 'Justificativa da contratação SESI',
+      title: 'Justificativa da contratação',
       content:
-        'A {unidade} identifica a necessidade de atendimento por terceiro especializado para o objeto descrito, em razão (a) da especialização exigida; (b) do volume e prazo incompatíveis com a capacidade interna; (c) do enquadramento no modelo oficial SESI para esse tipo de contratação.',
+        'A {unidade} identifica a necessidade de atendimento por terceiro especializado para o objeto descrito, em razão (a) da especialização exigida; (b) do volume e prazo incompatíveis com a capacidade interna; (c) do enquadramento no modelo oficial da administração para esse tipo de contratação.',
     },
     expand: {
-      title: 'Justificativa SESI detalhada',
+      title: 'Justificativa detalhada',
       content:
-        'A {unidade} demanda atendimento técnico especializado por terceiro para o objeto descrito, considerando: a especialização requerida; o volume e prazo incompatíveis com a capacidade interna; o enquadramento no modelo oficial SESI; a necessidade de continuidade operacional sem interrupção dos atendimentos atuais; e o histórico institucional de contratações análogas que demonstram a adequação do formato.',
+        'A {unidade} demanda atendimento técnico especializado por terceiro para o objeto descrito, considerando: a especialização requerida; o volume e prazo incompatíveis com a capacidade interna; o enquadramento no modelo oficial; a necessidade de continuidade operacional sem interrupção dos atendimentos atuais; e o histórico de contratações análogas que demonstram a adequação do formato.',
     },
   },
   lotGroupingJustification: {
@@ -283,20 +282,20 @@ const sesiRecipes: Record<string, FieldRecipe> = {
     suggest: {
       title: 'Especificações técnicas',
       content:
-        'As especificações técnicas dos itens estão detalhadas na matriz de lotes deste TR, incluindo unidade de medida, quantidade total, condições de entrega, garantia mínima e demais critérios técnicos exigidos pelo SESI.',
-      note: 'A matriz de lotes complementa este campo. Preencha o step "Lotes" para consolidar.',
+        'As especificações técnicas dos itens estão detalhadas na tabela de itens deste documento, incluindo unidade de medida, quantidade total, condições de entrega, garantia mínima e demais critérios técnicos exigidos no edital.',
+      note: 'A tabela de itens complementa este campo.',
     },
     rewrite: {
       title: 'Especificações reescritas',
       content:
-        'Vide matriz de lotes anexa: cada item traz unidade de medida, quantidade total, condições de entrega e garantia, conforme o padrão SESI.',
+        'Vide tabela de itens: cada item traz unidade de medida, quantidade total, condições de entrega e garantia, conforme o modelo oficial.',
     },
   },
   warrantyConditions: {
     suggest: {
       title: 'Condições de garantia',
       content:
-        'Garantia mínima conforme legislação aplicável e padrão SESI, com atendimento técnico durante a vigência, substituição em caso de não conformidade e prazos de resposta definidos em contrato.',
+        'Garantia mínima conforme legislação aplicável, com atendimento técnico durante a vigência, substituição em caso de não conformidade e prazos de resposta definidos em contrato.',
     },
   },
   deliveryInstallTerm: {
@@ -317,21 +316,21 @@ const sesiRecipes: Record<string, FieldRecipe> = {
     suggest: {
       title: 'Notas operacionais',
       content:
-        'A contratada deve respeitar protocolos internos da {unidade}, normas de segurança aplicáveis e procedimentos de comunicação institucional durante toda a execução.',
+        'A contratada deve respeitar protocolos internos da {unidade}, normas de segurança aplicáveis e procedimentos de comunicação durante toda a execução.',
     },
   },
   sampleRequirement: {
     suggest: {
       title: 'Exigência de amostra',
       content:
-        'Apresentação de amostra técnica conforme padrão SESI, sujeita a análise pela equipe responsável da {unidade} antes da homologação do fornecedor.',
+        'Apresentação de amostra técnica conforme o edital, sujeita a análise pela equipe responsável da {unidade} antes da homologação do fornecedor.',
     },
   },
   contractTerm: {
     suggest: {
       title: 'Vigência contratual',
       content:
-        'Vigência conforme padrão SESI para o objeto, com possibilidade de prorrogação justificada e renovação dentro dos limites estabelecidos pela política institucional.',
+        'Vigência conforme os limites legais para o objeto, com possibilidade de prorrogação justificada dentro dos limites estabelecidos pela legislação.',
     },
   },
   budgetResources: {
@@ -345,33 +344,33 @@ const sesiRecipes: Record<string, FieldRecipe> = {
     suggest: {
       title: 'Requisitos da proposta',
       content:
-        'A proposta deve contemplar especificações técnicas integrais, preço total e por lote, condições comerciais, prazo de validade e regularidade fiscal, conforme padrão SESI.',
+        'A proposta deve contemplar especificações técnicas integrais, preço total e por lote, condições comerciais, prazo de validade e regularidade fiscal, conforme o edital.',
     },
   },
   qualificationRequirements: {
     suggest: {
       title: 'Requisitos de habilitação',
       content:
-        'Habilitação jurídica, regularidade fiscal e trabalhista, qualificação técnica compatível e qualificação econômico-financeira nos termos do modelo SESI vigente.',
+        'Habilitação jurídica, regularidade fiscal e trabalhista, qualificação técnica compatível e qualificação econômico-financeira nos termos da Lei 14.133/2021.',
     },
   },
   paymentConditions: {
     suggest: {
       title: 'Condições de pagamento',
       content:
-        'Pagamento conforme cronograma vinculado à entrega validada por lote, mediante aceite formal da {unidade} e atendimento das condições contratuais SESI.',
+        'Pagamento conforme cronograma vinculado à entrega validada por lote, mediante aceite formal da {unidade} e atendimento das condições contratuais.',
     },
   },
   contractingPartyObligations: {
     suggest: {
-      title: 'Obrigações do contratante (SESI)',
+      title: 'Obrigações do contratante',
       content:
-        'O SESI obriga-se a fornecer informações necessárias, validar entregas dentro do prazo previsto, efetuar pagamentos conforme contrato e indicar interlocutor responsável pela {unidade}.',
+        'O contratante obriga-se a fornecer as informações necessárias, validar entregas dentro do prazo previsto, efetuar pagamentos conforme contrato e indicar interlocutor responsável pela {unidade}.',
     },
   },
   contractorObligations: {
     suggest: {
-      title: 'Obrigações do contratado (SESI)',
+      title: 'Obrigações do contratado',
       content:
         'A contratada obriga-se a cumprir o objeto conforme especificações, manter regularidade documental durante a vigência, atender prazos de execução e responder por danos decorrentes da prestação.',
     },
@@ -380,14 +379,14 @@ const sesiRecipes: Record<string, FieldRecipe> = {
     suggest: {
       title: 'Gestão e fiscalização',
       content:
-        'Gestão pela {unidade}, com fiscal designado, ritos formais de acompanhamento, registro de aceites e tratativa imediata de não conformidades conforme padrão SESI.',
+        'Gestão pela {unidade}, com fiscal designado, ritos formais de acompanhamento, registro de aceites e tratativa imediata de não conformidades conforme as boas práticas de fiscalização.',
     },
   },
   penalties: {
     suggest: {
       title: 'Penalidades',
       content:
-        'Em caso de inexecução total ou parcial, aplicam-se as penalidades previstas no padrão SESI, observado o contraditório e a ampla defesa antes de qualquer sanção.',
+        'Em caso de inexecução total ou parcial, aplicam-se as penalidades previstas em lei e no edital, observado o contraditório e a ampla defesa antes de qualquer sanção.',
     },
   },
 }
@@ -405,26 +404,24 @@ function applyTemplateVars(
 
 function fallbackContent(
   field: FieldDefinition,
-  action: TRAssistantAction,
-  family: TemplateFamily
+  action: TRAssistantAction
 ): { title: string; content: string; note?: string } {
-  const institutionLabel = family === 'sesi' ? 'SESI' : 'FIEPE/IEL'
   if (action === 'suggest') {
     return {
       title: `Texto-base para "${field.label}"`,
-      content: `Sugestão genérica para "${field.label}" no padrão ${institutionLabel}. Ajuste com o contexto específico da sua contratação antes de aplicar.`,
+      content: `Sugestão genérica para "${field.label}". Ajuste com o contexto específico da sua contratação antes de aplicar.`,
       note: 'Sem regra dedicada para este campo. Padrão genérico aplicado.',
     }
   }
   if (action === 'expand') {
     return {
       title: `Expandir "${field.label}"`,
-      content: `Considere acrescentar contexto institucional, justificativa específica e referência ao padrão ${institutionLabel} para enriquecer o conteúdo deste campo.`,
+      content: `Considere acrescentar contexto, justificativa específica e referência aos requisitos da contratação para enriquecer o conteúdo deste campo.`,
     }
   }
   return {
     title: `Reescrever "${field.label}"`,
-    content: `Reescrita sugerida para "${field.label}" mantendo o tom institucional do padrão ${institutionLabel}, com clareza e padronização.`,
+    content: `Reescrita sugerida para "${field.label}" com clareza e padronização.`,
   }
 }
 
@@ -443,13 +440,13 @@ export function generateAssistantSuggestion(
   if (support === 'cadastral') return null
 
   const family = familyForContext(context)
-  const recipes = family === 'sesi' ? sesiRecipes : fiepeIelRecipes
+  const recipes =
+    family === 'operational' ? operationalRecipes : planningRecipes
   const recipe = recipes[fieldId]
 
   const actionRecipe = recipe?.[action]
   const suggestFallback = action !== 'suggest' ? recipe?.suggest : undefined
-  const base =
-    actionRecipe ?? suggestFallback ?? fallbackContent(field, action, family)
+  const base = actionRecipe ?? suggestFallback ?? fallbackContent(field, action)
 
   return {
     fieldId,
