@@ -331,7 +331,9 @@ export function TRWizardPage({
                     <p className='text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase'>
                       <span translate='no'>{docTypeLabel(current)}</span>
                     </p>
-                    <CardTitle as={2}>{docTypeFullLabel(current)}</CardTitle>
+                    <CardTitle as={2} className='font-serif'>
+                      {docTypeFullLabel(current)}
+                    </CardTitle>
                     <CardDescription>{model.intro}</CardDescription>
                   </div>
                   <DocStatusBadge isDone={isDone} />
