@@ -82,7 +82,7 @@ export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
         <HeaderActions />
       </Header>
 
-      <Main className='stagger-fade-in space-y-6 pb-8'>
+      <Main className='space-y-6 pb-8'>
         {mode === 'edit' && (
           <Alert
             role='status'

@@ -178,46 +178,6 @@
   }
 }
 
-@utility stagger-fade-in {
-  & > * {
-    opacity: 0;
-    transform: translateY(10px);
-    filter: blur(3px);
-    /* Cohesion (Wave 5.9): 420ms -> 280ms, ease-emil-out. Personalidade
-       serious/fast do wizard pede entradas mais snappy. */
-    animation: feel-better-fade-in 280ms var(--ease-emil-out) forwards;
-  }
-  & > *:nth-child(1) {
-    animation-delay: 0ms;
-  }
-  & > *:nth-child(2) {
-    animation-delay: 50ms;
-  }
-  & > *:nth-child(3) {
-    animation-delay: 100ms;
-  }
-  & > *:nth-child(4) {
-    animation-delay: 150ms;
-  }
-  & > *:nth-child(5) {
-    animation-delay: 200ms;
-  }
-  & > *:nth-child(6) {
-    animation-delay: 250ms;
-  }
-  & > *:nth-child(n + 7) {
-    animation-delay: 300ms;
-  }
-}
-
-@keyframes feel-better-fade-in {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-
 /* Entrada do conteúdo do step do wizard (~Emil step-content-enter).
    Aplica fade + slight rise + blur quando o elemento monta no DOM.
    Cohesion: 180ms emil-out alinha com a personalidade serious/fast do app. */

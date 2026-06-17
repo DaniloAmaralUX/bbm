@@ -12,7 +12,7 @@ export function TRListPage() {
         <HeaderActions />
       </Header>
 
-      <Main className='flex flex-1 stagger-fade-in flex-col gap-6'>
+      <Main className='flex flex-1 flex-col gap-6'>
         <div className='flex flex-wrap items-end justify-between gap-4'>
           <div className='space-y-1'>
             <h1 className='text-2xl font-semibold tracking-tight text-balance'>
