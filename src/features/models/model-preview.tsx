@@ -132,7 +132,7 @@ export function ModelPreview({ model }: { model: ModelDefinition }) {
             >
               <CardContent className='grid gap-4 p-6'>
                 <div className='space-y-1'>
-                  <h2 className='text-lg font-semibold text-balance'>
+                  <h2 className='font-serif text-lg font-semibold text-balance'>
                     {section.title}
                   </h2>
                   {section.description ? (

@@ -55,7 +55,7 @@ export function TRDocumentView({
       {!hideHeader && (
         <CardHeader className='border-b border-border/60 pb-5'>
           <div className='flex flex-wrap items-start justify-between gap-3'>
-            <CardTitle as={2} className='text-2xl font-semibold'>
+            <CardTitle as={2} className='font-serif text-2xl font-semibold'>
               {title}
             </CardTitle>
             {status ? (
@@ -77,7 +77,7 @@ export function TRDocumentView({
               id={slugifySection(section.title)}
               className='scroll-mt-24 space-y-3'
             >
-              <h2 className='text-lg font-semibold text-balance'>
+              <h2 className='font-serif text-lg font-semibold text-balance'>
                 {section.title}
               </h2>
 
