@@ -8,11 +8,11 @@ import {
 } from './metrics'
 import { trs } from './trs'
 
-// Identidade do produto. Nome placeholder ("Fase Preparatória") — trocar aqui
-// quando a marca definitiva for definida; sidebar, títulos e breadcrumb derivam daqui.
+// Identidade do produto. Fonte única: sidebar, títulos, breadcrumb e o cabeçalho
+// dos documentos exportados derivam daqui.
 export const appIdentity = {
-  name: 'Fase Preparatória',
-  shortName: 'FP',
+  name: 'Doc Fácil GoV',
+  shortName: 'DFG',
   subtitle: 'Contratações públicas',
 }
 

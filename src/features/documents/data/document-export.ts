@@ -231,7 +231,7 @@ export function buildDocumentHtml(trId: string): {
     </div>
   </section>
   <footer class="doc-footer">
-    ${escapeHtml(doc.id)} - ${escapeHtml(docTypeFullLabel(doc.docType))} | Documento gerado pela Fase Preparatória (protótipo de validação, conteúdo ilustrativo).
+    ${escapeHtml(doc.id)} - ${escapeHtml(docTypeFullLabel(doc.docType))} | Documento gerado pelo ${escapeHtml(appIdentity.name)} (protótipo de validação, conteúdo ilustrativo).
   </footer>
 </body>
 </html>`
