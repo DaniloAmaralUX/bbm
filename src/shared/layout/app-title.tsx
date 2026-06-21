@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
 import { Logo } from '@/shared/assets/logo'
+import { Wordmark } from '@/shared/assets/wordmark'
 import { cn } from '@/shared/lib/utils'
 import {
   SidebarMenu,
@@ -27,9 +28,12 @@ export function AppTitle() {
               onClick={() => setOpenMobile(false)}
               className='flex flex-1 items-center gap-3 text-start'
             >
-              <Logo className='size-8 text-primary' />
-              <span className='grid text-sm leading-tight' translate='no'>
-                <span className='truncate font-bold'>{appIdentity.name}</span>
+              <Logo className='size-8 shrink-0 text-primary' />
+              <span
+                className='grid min-w-0 flex-1 gap-1 leading-tight'
+                translate='no'
+              >
+                <Wordmark className='w-full max-w-[168px] text-foreground' />
                 <span className='truncate text-xs text-muted-foreground'>
                   {appIdentity.subtitle}
                 </span>
