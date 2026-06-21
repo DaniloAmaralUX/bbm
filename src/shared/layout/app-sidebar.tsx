@@ -33,9 +33,11 @@ export function AppSidebar() {
         <AppTitle />
       </SidebarHeader>
       <SidebarContent>
-        {navGroups.map((props) => (
-          <NavGroup key={props.title} {...props} />
-        ))}
+        <nav aria-label='Navegação principal' className='flex flex-col gap-2'>
+          {navGroups.map((props) => (
+            <NavGroup key={props.title} {...props} />
+          ))}
+        </nav>
       </SidebarContent>
       <SidebarFooter>
         <UserMenu />
