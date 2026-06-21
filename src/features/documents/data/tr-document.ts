@@ -10,8 +10,8 @@ const trItemsTableSection = itemsToTableSection(
   '5. Itens e modalidade'
 )
 
-export function getTRById(trId?: string) {
-  return trs.find((item) => item.id === trId) ?? trs[0]
+export function getTRById(trId?: string): TRItem | undefined {
+  return trs.find((item) => item.id === trId)
 }
 
 // --- Builders de seção (espelham o layout dos modelos DFD/ETP/TR) ---
@@ -129,6 +129,7 @@ const baseComments = [
 
 export function getTRDocument(trId?: string) {
   const tr = getTRById(trId)
+  if (!tr) return undefined
 
   return {
     ...tr,

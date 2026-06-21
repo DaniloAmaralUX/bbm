@@ -182,8 +182,9 @@ export function buildDocumentHtml(trId: string): {
   filename: string
   html: string
   title: string
-} {
+} | null {
   const doc = getTRDocument(trId)
+  if (!doc) return null
   const statusLabel = statusLabels[doc.status] ?? doc.status
 
   const meta = [
@@ -240,7 +241,9 @@ export function buildDocumentHtml(trId: string): {
 }
 
 export function downloadTRWord(trId: string): void {
-  const { filename, html } = buildDocumentHtml(trId)
+  const built = buildDocumentHtml(trId)
+  if (!built) return
+  const { filename, html } = built
   const blob = new Blob([html], { type: 'application/msword' })
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
@@ -259,7 +262,9 @@ export function downloadTRWord(trId: string): void {
  * remove o iframe quando o diálogo fecha. Retorna false só em falha rara de DOM.
  */
 export function printTRToPdf(trId: string): boolean {
-  const { html } = buildDocumentHtml(trId)
+  const built = buildDocumentHtml(trId)
+  if (!built) return false
+  const { html } = built
 
   const iframe = document.createElement('iframe')
   iframe.setAttribute('aria-hidden', 'true')
