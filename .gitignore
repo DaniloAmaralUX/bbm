@@ -26,3 +26,8 @@ dist-ssr
 *.sw?
 .vercel
 package-lock.json
+
+# Skills de agente instaladas localmente (npx skills add) - ferramenta, nao produto
+.agents/
+.claude/skills/
+skills-lock.json
