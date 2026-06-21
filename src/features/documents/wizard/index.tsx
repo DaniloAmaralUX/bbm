@@ -191,7 +191,7 @@ export function TRWizardPage({
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (window.localStorage.getItem('tr-wizard-onboarded')) return
-    toast('Bem-vindo à Fase Preparatória', {
+    toast('Bem-vindo ao Doc Fácil GoV', {
       description:
         'Edite a cadeia DFD, ETP e TR pelo mesmo motor. Os campos comuns são herdados; conclua um documento para liberar o próximo.',
       duration: 8000,

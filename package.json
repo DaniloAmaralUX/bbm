@@ -1,6 +1,6 @@
 {
-  "name": "fase-preparatoria",
-  "description": "Plataforma da fase preparatória da contratação pública (Lei 14.133): cadeia DFD, ETP e TR com construtor de modelos, herança controlada e apoio de IA.",
+  "name": "doc-facil-gov",
+  "description": "Doc Fácil GoV — plataforma da fase preparatória da contratação pública (Lei 14.133): cadeia DFD, ETP e TR com construtor de modelos, herança controlada e apoio de IA.",
   "private": true,
   "version": "0.1.0",
   "type": "module",
