@@ -30,6 +30,7 @@ import {
   trStatuses,
   trUnits,
 } from '@/features/documents/data/data'
+import { docTypeLabel } from '@/features/documents/data/doc-type'
 import { type TRItem } from '@/features/documents/data/schema'
 import { TRsCard } from './trs-card'
 import { trsColumns as columns } from './trs-columns'
@@ -90,9 +91,13 @@ export function TRsTable({ data }: TRsTableProps) {
     onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn: (row, _columnId, filterValue) => {
       const searchValue = String(filterValue).toLowerCase()
-      return [row.original.id, row.original.title, row.original.owner].some(
-        (field) => field.toLowerCase().includes(searchValue)
-      )
+      return [
+        row.original.id,
+        row.original.title,
+        row.original.owner,
+        row.original.unit,
+        docTypeLabel(row.original.docType),
+      ].some((field) => field.toLowerCase().includes(searchValue))
     },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -123,7 +128,7 @@ export function TRsTable({ data }: TRsTableProps) {
     <div className={cn('flex flex-1 flex-col gap-4')}>
       <DataTableToolbar
         table={table}
-        searchPlaceholder='Filtrar por título, ID ou responsável…'
+        searchPlaceholder='Filtrar por título, ID, unidade ou responsável…'
         filters={[
           {
             columnId: 'docType',

@@ -1,6 +1,13 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { CheckCircle2, FileText, Pencil, PencilRuler, Plus } from 'lucide-react'
+import {
+  CheckCircle2,
+  FileText,
+  Pencil,
+  PencilRuler,
+  Plus,
+  Search,
+} from 'lucide-react'
 import { formatDocDate } from '@/shared/lib/format-date'
 import { Header } from '@/shared/layout/header'
 import { HeaderActions } from '@/shared/layout/header-actions'
@@ -15,6 +22,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu'
+import { Input } from '@/shared/ui/input'
 import { SectionLabel } from '@/shared/components/section-label'
 import {
   type DocType,
@@ -109,14 +117,28 @@ export function ModelsListPage() {
   const models = useModelsStore((state) => state.models)
   const createDraftModel = useModelsStore((state) => state.createDraftModel)
   const navigate = useNavigate()
+  const [query, setQuery] = useState('')
+  const q = query.trim().toLowerCase()
+  const filtered = useMemo(
+    () =>
+      q
+        ? models.filter((model) =>
+            `${model.name} ${docTypeLabel(model.docType)}`
+              .toLowerCase()
+              .includes(q)
+          )
+        : models,
+    [models, q]
+  )
   const groups = useMemo(
     () =>
       docTypes.map((docType) => ({
         docType,
-        items: models.filter((model) => model.docType === docType),
+        items: filtered.filter((model) => model.docType === docType),
       })),
-    [models]
+    [filtered]
   )
+  const hasResults = filtered.length > 0
 
   function handleCreate(docType: DocType) {
     const id = createDraftModel(docType)
@@ -163,18 +185,42 @@ export function ModelsListPage() {
           </DropdownMenu>
         </div>
 
-        {groups.map((group) => (
-          <section key={group.docType} className='space-y-3'>
-            <SectionLabel>
-              {docTypeFullLabel(group.docType)} - {docTypeLabel(group.docType)}
-            </SectionLabel>
-            <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-3'>
-              {group.items.map((model) => (
-                <ModelCard key={model.id} model={model} />
-              ))}
-            </div>
-          </section>
-        ))}
+        <div className='relative w-full max-w-sm'>
+          <Search
+            aria-hidden='true'
+            className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground'
+          />
+          <Input
+            type='search'
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder='Buscar modelo por nome ou tipo…'
+            aria-label='Buscar modelos'
+            className='ps-9'
+          />
+        </div>
+
+        {hasResults ? (
+          groups.map((group) =>
+            group.items.length ? (
+              <section key={group.docType} className='space-y-3'>
+                <SectionLabel>
+                  {docTypeFullLabel(group.docType)} -{' '}
+                  {docTypeLabel(group.docType)}
+                </SectionLabel>
+                <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-3'>
+                  {group.items.map((model) => (
+                    <ModelCard key={model.id} model={model} />
+                  ))}
+                </div>
+              </section>
+            ) : null
+          )
+        ) : (
+          <p className='rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-sm text-muted-foreground'>
+            Nenhum modelo encontrado para “{query}”.
+          </p>
+        )}
       </Main>
     </>
   )
