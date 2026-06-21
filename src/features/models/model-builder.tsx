@@ -338,7 +338,7 @@ export function ModelBuilderPage({ modelId }: { modelId: string }) {
         <HeaderActions />
       </Header>
 
-      <Main className='flex flex-1 stagger-fade-in flex-col gap-6 pb-8'>
+      <Main className='flex flex-1 flex-col gap-6 pb-8'>
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <Button asChild variant='ghost' className='-ml-3 rounded-xl'>
             <Link to='/modelos'>
