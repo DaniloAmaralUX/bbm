@@ -1,6 +1,16 @@
 import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Check, Eye, Pencil, Plus, Send, Trash2 } from 'lucide-react'
+import {
+  ArrowLeft,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  Pencil,
+  Plus,
+  Send,
+  Trash2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Header } from '@/shared/layout/header'
 import { HeaderActions } from '@/shared/layout/header-actions'
@@ -18,7 +28,12 @@ import {
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
-import { Field, FieldDescription, FieldLabel } from '@/shared/ui/field'
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from '@/shared/ui/field'
 import { Input } from '@/shared/ui/input'
 import {
   Select,
@@ -58,6 +73,155 @@ const inputTypeOrder: FieldInputType[] = [
   'itemsTable',
 ]
 
+type OptionRow = { id: string; label: string }
+
+/**
+ * Editor das opções de um campo de seleção: uma linha de form por opção
+ * (Input + reordenar + remover), em vez do antigo textarea com shift+enter.
+ * Persiste só opções limpas (sem vazias, sem duplicadas; value = label), pois o
+ * Select do wizard exige value não-vazio. Vazias/duplicadas ficam marcadas mas
+ * não vão para o modelo.
+ */
+function OptionsEditor({
+  modelId,
+  field,
+}: {
+  modelId: string
+  field: FieldDefinition
+}) {
+  const updateField = useModelsStore((state) => state.updateField)
+  const [rows, setRows] = useState<OptionRow[]>(() =>
+    (field.options ?? []).map((option) => ({
+      id: crypto.randomUUID(),
+      label: option.label,
+    }))
+  )
+
+  function persist(next: OptionRow[]) {
+    setRows(next)
+    const seen = new Set<string>()
+    const options: Array<{ label: string; value: string }> = []
+    for (const row of next) {
+      const label = row.label.trim()
+      if (!label || seen.has(label)) continue
+      seen.add(label)
+      options.push({ label, value: label })
+    }
+    updateField(modelId, field.id, { options })
+  }
+
+  const counts = new Map<string, number>()
+  for (const row of rows) {
+    const label = row.label.trim()
+    if (label) counts.set(label, (counts.get(label) ?? 0) + 1)
+  }
+  const lastIsEmpty = (rows[rows.length - 1]?.label.trim() ?? 'x') === ''
+
+  const move = (index: number, delta: number) => {
+    const target = index + delta
+    const a = rows[index]
+    const b = rows[target]
+    if (!a || !b) return
+    const next = [...rows]
+    next[index] = b
+    next[target] = a
+    persist(next)
+  }
+
+  return (
+    <Field>
+      <FieldLabel>Opções da seleção</FieldLabel>
+      {rows.length > 0 ? (
+        <div className='flex flex-col gap-2'>
+          {rows.map((row, index) => {
+            const isDuplicate =
+              row.label.trim() !== '' && (counts.get(row.label.trim()) ?? 0) > 1
+            return (
+              <Field key={row.id} data-invalid={isDuplicate || undefined}>
+                <div className='flex items-center gap-2'>
+                  <Input
+                    value={row.label}
+                    aria-invalid={isDuplicate || undefined}
+                    aria-label={`Opção ${index + 1}`}
+                    placeholder={`Opção ${index + 1}`}
+                    onChange={(event) =>
+                      persist(
+                        rows.map((item) =>
+                          item.id === row.id
+                            ? { ...item, label: event.target.value }
+                            : item
+                        )
+                      )
+                    }
+                  />
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className='shrink-0 text-muted-foreground'
+                    aria-label={`Mover opção ${index + 1} para cima`}
+                    disabled={index === 0}
+                    onClick={() => move(index, -1)}
+                  >
+                    <ChevronUp aria-hidden='true' className='size-4' />
+                  </Button>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className='shrink-0 text-muted-foreground'
+                    aria-label={`Mover opção ${index + 1} para baixo`}
+                    disabled={index === rows.length - 1}
+                    onClick={() => move(index, 1)}
+                  >
+                    <ChevronDown aria-hidden='true' className='size-4' />
+                  </Button>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className='shrink-0 text-muted-foreground hover:text-destructive'
+                    aria-label={`Remover opção ${index + 1}`}
+                    onClick={() =>
+                      persist(rows.filter((item) => item.id !== row.id))
+                    }
+                  >
+                    <Trash2 aria-hidden='true' className='size-4' />
+                  </Button>
+                </div>
+                {isDuplicate ? (
+                  <FieldError>Opção duplicada - será ignorada.</FieldError>
+                ) : null}
+              </Field>
+            )
+          })}
+        </div>
+      ) : (
+        <p className='text-sm text-muted-foreground'>
+          Nenhuma opção ainda. Adicione a primeira abaixo.
+        </p>
+      )}
+      <Button
+        type='button'
+        variant='outline'
+        size='sm'
+        className='w-fit rounded-xl'
+        disabled={lastIsEmpty}
+        onClick={() =>
+          persist([...rows, { id: crypto.randomUUID(), label: '' }])
+        }
+      >
+        <Plus aria-hidden='true' className='size-4' />
+        Adicionar opção
+      </Button>
+      <FieldDescription>
+        Cada opção é um valor que o requisitante poderá escolher. Vazias e
+        duplicadas são ignoradas.
+      </FieldDescription>
+    </Field>
+  )
+}
+
 function FieldEditor({
   modelId,
   sectionId,
@@ -69,9 +233,6 @@ function FieldEditor({
 }) {
   const updateField = useModelsStore((state) => state.updateField)
   const removeField = useModelsStore((state) => state.removeField)
-  const optionsText = (field.options ?? [])
-    .map((option) => option.label)
-    .join('\n')
 
   return (
     <div className='grid gap-4 rounded-2xl border border-border/60 bg-muted/20 p-4'>
@@ -139,24 +300,7 @@ function FieldEditor({
       </Field>
 
       {field.input === 'select' ? (
-        <Field>
-          <FieldLabel htmlFor={`${field.id}-options`}>
-            Opções (uma por linha)
-          </FieldLabel>
-          <Textarea
-            id={`${field.id}-options`}
-            value={optionsText}
-            onChange={(event) => {
-              const options = event.target.value
-                .split('\n')
-                .map((line) => line.trim())
-                .filter(Boolean)
-                .map((label) => ({ label, value: label }))
-              updateField(modelId, field.id, { options })
-            }}
-            placeholder={'Presencial\nHíbrida\nRemota'}
-          />
-        </Field>
+        <OptionsEditor modelId={modelId} field={field} />
       ) : null}
 
       <div className='flex flex-wrap items-center justify-between gap-4'>
