@@ -7,33 +7,58 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/shared/ui/breadcrumb'
-import { docTypeLabel } from '@/features/documents/data/doc-type'
+import { type DocType, docTypeLabel } from '@/features/documents/data/doc-type'
+import { type ModelDefinition } from '@/features/documents/data/templates'
+import { trs } from '@/features/documents/data/trs'
 import { useTRWizard } from '@/features/documents/wizard/store/use-tr-wizard'
+import { useModelsStore } from '@/features/models/store/use-models-store'
 
 type Crumb = { label: string; href?: string }
 
-function buildCrumbs(pathname: string): Crumb[] {
-  const segments = pathname.split('/').filter(Boolean)
+type Resolvers = {
+  models: ModelDefinition[]
+  wizardDocType: DocType | null
+}
 
+// Resolve os crumbs com NOMES reais (título do documento, nome do modelo) em vez
+// de ids genéricos — saber onde se está reduz re-busca (wayfinding = findability).
+function buildCrumbs(pathname: string, ctx: Resolvers): Crumb[] {
+  const segments = pathname.split('/').filter(Boolean)
   if (segments.length === 0) return []
 
-  const [head, ...rest] = segments
+  const [head, sub] = segments
 
   switch (head) {
     case 'dashboard':
       return [{ label: 'Dashboard' }]
 
     case 'documentos': {
-      const sub = rest[0]
       if (!sub) return [{ label: 'Documentos' }]
-      if (sub === 'novo')
-        return [
+      if (sub === 'novo') {
+        const base: Crumb[] = [
           { label: 'Documentos', href: '/documentos' },
-          { label: 'Novo documento' },
+          { label: 'Novo documento', href: '/documentos/novo' },
         ]
+        return ctx.wizardDocType
+          ? [...base, { label: docTypeLabel(ctx.wizardDocType) }]
+          : [
+              { label: 'Documentos', href: '/documentos' },
+              { label: 'Novo documento' },
+            ]
+      }
+      const doc = trs.find((item) => item.id === sub)
       return [
         { label: 'Documentos', href: '/documentos' },
-        { label: `Documento ${sub}` },
+        { label: doc?.title ?? `Documento ${sub}` },
+      ]
+    }
+
+    case 'modelos': {
+      if (!sub) return [{ label: 'Modelos' }]
+      const model = ctx.models.find((item) => item.id === sub)
+      return [
+        { label: 'Modelos', href: '/modelos' },
+        { label: model?.name ?? 'Modelo' },
       ]
     }
 
@@ -42,34 +67,22 @@ function buildCrumbs(pathname: string): Crumb[] {
   }
 }
 
-function useWizardStepLabel(active: boolean): string | null {
-  // A "etapa" do wizard agora e o tipo de documento corrente da cadeia.
-  const docType = useTRWizard((state) => (active ? state.chain.current : null))
-  if (!active || !docType) return null
-  return docTypeLabel(docType)
-}
-
 export function RouteBreadcrumb() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const crumbs = buildCrumbs(pathname)
-  const wizardStep = useWizardStepLabel(pathname === '/documentos/novo')
+  const models = useModelsStore((s) => s.models)
+  // Etapa corrente do wizard (tipo de documento da cadeia) para o crumb final.
+  const wizardDocType = useTRWizard((s) =>
+    pathname === '/documentos/novo' ? s.chain.current : null
+  )
 
+  const crumbs = buildCrumbs(pathname, { models, wizardDocType })
   if (crumbs.length === 0) return null
-
-  const finalCrumbs =
-    wizardStep && pathname === '/documentos/novo'
-      ? [
-          { label: 'Documentos', href: '/documentos' },
-          { label: 'Novo documento', href: '/documentos/novo' },
-          { label: wizardStep },
-        ]
-      : crumbs
 
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        {finalCrumbs.map((crumb, index) => {
-          const isLast = index === finalCrumbs.length - 1
+        {crumbs.map((crumb, index) => {
+          const isLast = index === crumbs.length - 1
           return (
             <span
               key={`${crumb.label}-${index}`}
@@ -77,7 +90,9 @@ export function RouteBreadcrumb() {
             >
               <BreadcrumbItem>
                 {isLast || !crumb.href ? (
-                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                  <BreadcrumbPage className='max-w-[40ch] truncate'>
+                    {crumb.label}
+                  </BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink asChild>
                     <Link to={crumb.href}>{crumb.label}</Link>

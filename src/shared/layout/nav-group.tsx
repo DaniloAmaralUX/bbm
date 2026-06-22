@@ -36,6 +36,7 @@ import {
 export function NavGroup({ title, items }: NavGroupProps) {
   const { state, isMobile } = useSidebar()
   const href = useLocation({ select: (location) => location.href })
+  const activeUrl = resolveActiveUrl(href, items)
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{title}</SidebarGroupLabel>
@@ -44,7 +45,13 @@ export function NavGroup({ title, items }: NavGroupProps) {
           const key = `${item.title}-${item.url}`
 
           if (!item.items)
-            return <SidebarMenuLink key={key} item={item} href={href} />
+            return (
+              <SidebarMenuLink
+                key={key}
+                item={item}
+                isActive={item.url === activeUrl}
+              />
+            )
 
           if (state === 'collapsed' && !isMobile)
             return (
@@ -62,16 +69,22 @@ function NavBadge({ children }: { children: ReactNode }) {
   return <Badge className='rounded-full px-1 py-0 text-xs'>{children}</Badge>
 }
 
-function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
+function SidebarMenuLink({
+  item,
+  isActive,
+}: {
+  item: NavLink
+  isActive: boolean
+}) {
   const { setOpenMobile } = useSidebar()
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton
-        asChild
-        isActive={checkIsActive(href, item)}
-        tooltip={item.title}
-      >
-        <Link to={item.url} onClick={() => setOpenMobile(false)}>
+      <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+        <Link
+          to={item.url}
+          onClick={() => setOpenMobile(false)}
+          aria-current={isActive ? 'page' : undefined}
+        >
           {item.icon && <item.icon />}
           <span>{item.title}</span>
           {item.badge && <NavBadge>{item.badge}</NavBadge>}
@@ -79,6 +92,27 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
       </SidebarMenuButton>
     </SidebarMenuItem>
   )
+}
+
+// Item ativo = a url mais específica (mais longa) que casa o caminho atual,
+// exata ou como prefixo de segmento. Assim /documentos/$id ativa "Documentos" e
+// /documentos/novo ativa "Novo documento" — nunca os dois ao mesmo tempo.
+function resolveActiveUrl(href: string, items: NavItem[]): string | null {
+  const path = href.split('?')[0]
+  let best: string | null = null
+  for (const item of items) {
+    const urls: string[] = []
+    if ('url' in item && item.url) urls.push(item.url)
+    if ('items' in item && item.items) {
+      for (const sub of item.items) if (sub.url) urls.push(sub.url)
+    }
+    for (const url of urls) {
+      if (path === url || path.startsWith(`${url}/`)) {
+        if (!best || url.length > best.length) best = url
+      }
+    }
+  }
+  return best
 }
 
 function SidebarMenuCollapsible({

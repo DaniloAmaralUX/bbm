@@ -69,7 +69,7 @@ function ToggleSidebar({
     >
       <X className='md:hidden' />
       <Menu className='max-md:hidden' />
-      <span className='sr-only'>Alternar barra lateral</span>
+      <span className='sr-only'>Alternar menu lateral</span>
     </Button>
   )
 }

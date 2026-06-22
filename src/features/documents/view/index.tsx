@@ -55,6 +55,8 @@ type TRViewPageProps = {
 export function TRViewPage({ trId, mode = 'view' }: TRViewPageProps) {
   const document = getTRDocument(trId)
   const item = getTRById(trId)
+  // A rota (loader) garante o id; este guarda apenas satisfaz o tipo.
+  if (!document || !item) return null
   const isApproved = document.status === 'approved'
 
   // Pode iniciar o proximo da cadeia (ETP a partir de DFD concluido, etc.) se o
