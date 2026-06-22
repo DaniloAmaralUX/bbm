@@ -6,7 +6,7 @@ import {
   allDocTypes,
   chainTypesOf,
   docTypeLabel,
-  parentOf,
+  isChainRootType,
 } from './doc-type'
 import { type TRItem } from './schema'
 
@@ -115,9 +115,7 @@ export type ChainFunnel = {
  * ao ultimo documento concluido. Sem cadeia ramificada no registry, vazio.
  */
 export function chainCompletion(items: TRItem[]): ChainFunnel {
-  const rootType = allDocTypes().find(
-    (type) => parentOf(type) === null && chainTypesOf(type).length > 1
-  )
+  const rootType = allDocTypes().find(isChainRootType)
   if (!rootType) {
     return { totalChains: 0, stages: [], completedChains: 0, rate: 0 }
   }

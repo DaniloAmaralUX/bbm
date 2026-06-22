@@ -15,7 +15,7 @@ import {
   chainTypesOf,
   docTypeFullLabel,
   docTypeLabel,
-  parentOf,
+  isChainRootType,
 } from '@/features/documents/data/doc-type'
 import { type TRItem } from '@/features/documents/data/schema'
 
@@ -37,11 +37,8 @@ export function TRLineageRail({
   // Tipo do no mais ancestral presente na cadeia da instancia.
   const rootType = chain[0]?.docType
   const chainTypes = rootType ? chainTypesOf(rootType) : []
-  // Cadeia enraizada: comeca num tipo-raiz (sem pai) que encabeca uma cadeia.
-  const isEnrooted =
-    rootType !== undefined &&
-    parentOf(rootType) === null &&
-    chainTypes.length > 1
+  // Cadeia enraizada: comeca num tipo que encabeca uma cadeia (ex.: DFD).
+  const isEnrooted = rootType !== undefined && isChainRootType(rootType)
 
   // Documento avulso (cadeia nao enraizada): mostra so o proprio no.
   if (!isEnrooted) {

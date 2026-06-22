@@ -80,9 +80,11 @@ export function allDocTypes(): DocType[] {
 }
 
 /**
- * @deprecated Use `allDocTypes()` (todos os tipos) ou `chainTypesOf(id)` (a
- * cadeia de um tipo). Alias transitorio para os consumidores ainda nao migrados
- * durante a fundacao do F2; removido no ultimo passo. Snapshot da semente na
- * carga do modulo (o registry e somente-leitura nesta fase).
+ * Um tipo encabeca uma cadeia? Verdadeiro quando nao tem pai e tem ao menos um
+ * descendente no registry (ex.: DFD). Distingue a raiz de uma cadeia ramificada
+ * de um tipo avulso (sem pai e sem filhos), que nao e raiz de nada. Base do
+ * papel de cadeia (chainRole), do funil do dashboard e do trilho de linhagem.
  */
-export const docTypes: readonly DocType[] = allDocTypes()
+export function isChainRootType(type: DocType): boolean {
+  return parentOf(type) === null && chainTypesOf(type).length > 1
+}

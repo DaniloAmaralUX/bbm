@@ -19,11 +19,9 @@ export const trNatureValues = [
   'capacitacao',
 ] as const
 
-// Ids dos tipos-semente (DFD/ETP/TR). F2: o tipo virou dado no registry
-// (use-doc-types-store), entao `docType` aceita qualquer id (z.string()); esta
-// lista serve apenas a faceta de filtro/rota das siglas-semente conhecidas.
-export const docTypeValues = ['dfd', 'etp', 'tr'] as const
-
+// F2: o tipo de documento virou dado no registry (use-doc-types-store), entao
+// `docType` aceita qualquer id de tipo (z.string()); a faceta de filtro lista os
+// tipos a partir do registry (allDocTypes), nao de um enum fixo aqui.
 export const trSchema = z.object({
   id: z.string(),
   docType: z.string(),

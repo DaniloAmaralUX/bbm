@@ -1,4 +1,4 @@
-import { type DocType, chainTypesOf } from './doc-type'
+import { type DocType, chainTypesOf, isChainRootType } from './doc-type'
 import { type TRItem } from './schema'
 
 /**
@@ -69,16 +69,16 @@ export function chainOf(item: TRItem, all: TRItem[]): TRItem[] {
 
 /**
  * Papel do documento quanto ao vínculo de cadeia, para filtro na listagem:
- * - `root`: início de cadeia (todo DFD encabeça uma cadeia);
- * - `linked`: parte da cadeia (ETP/TR com pai registrado);
- * - `standalone`: avulso (ETP/TR sem vínculo de cadeia registrado).
+ * - `root`: início de cadeia (o tipo encabeça uma cadeia, ex.: DFD);
+ * - `linked`: parte da cadeia (com pai registrado);
+ * - `standalone`: avulso (sem vínculo de cadeia registrado).
  */
 export type ChainRole = 'root' | 'linked' | 'standalone'
 
 export const chainRoleValues = ['root', 'linked', 'standalone'] as const
 
 export function chainRole(item: TRItem): ChainRole {
-  if (item.docType === 'dfd') return 'root'
+  if (isChainRootType(item.docType)) return 'root'
   if (item.parentId) return 'linked'
   return 'standalone'
 }
