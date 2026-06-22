@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import {
   type DocType,
   docTypeFullLabel,
+  docTypeLabel,
 } from '@/features/documents/data/doc-type'
 import {
   type FieldDefinition,
@@ -77,7 +78,7 @@ export const useModelsStore = create<ModelsState>()((set) => ({
     const model: ModelDefinition = {
       id,
       docType,
-      name: `Novo modelo de ${docType.toUpperCase()}`,
+      name: `Novo modelo de ${docTypeLabel(docType)}`,
       label: docTypeFullLabel(docType),
       intro: '',
       state: 'draft',

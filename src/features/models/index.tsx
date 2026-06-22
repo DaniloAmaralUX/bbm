@@ -16,21 +16,27 @@ import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/shared/ui/dialog'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu'
+import { Field, FieldLabel } from '@/shared/ui/field'
 import { Input } from '@/shared/ui/input'
 import { SectionLabel } from '@/shared/components/section-label'
-import {
-  type DocType,
-  docTypeFullLabel,
-  docTypeLabel,
-  docTypes,
-} from '@/features/documents/data/doc-type'
+import { type DocType, docTypeLabel } from '@/features/documents/data/doc-type'
 import { type ModelDefinition } from '@/features/documents/data/templates'
+import { useDocumentTypesStore } from '@/features/documents/data/use-document-types-store'
 import { useModelsStore } from './store/use-models-store'
 
 function StateBadge({ state }: { state: ModelDefinition['state'] }) {
@@ -116,8 +122,12 @@ function ModelCard({ model }: { model: ModelDefinition }) {
 export function ModelsListPage() {
   const models = useModelsStore((state) => state.models)
   const createDraftModel = useModelsStore((state) => state.createDraftModel)
+  const types = useDocumentTypesStore((state) => state.types)
+  const createType = useDocumentTypesStore((state) => state.createType)
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
+  const [newTypeOpen, setNewTypeOpen] = useState(false)
+  const [newTypeName, setNewTypeName] = useState('')
   const q = query.trim().toLowerCase()
   const filtered = useMemo(
     () =>
@@ -132,17 +142,26 @@ export function ModelsListPage() {
   )
   const groups = useMemo(
     () =>
-      docTypes.map((docType) => ({
-        docType,
-        items: filtered.filter((model) => model.docType === docType),
+      types.map((type) => ({
+        type,
+        items: filtered.filter((model) => model.docType === type.id),
       })),
-    [filtered]
+    [filtered, types]
   )
   const hasResults = filtered.length > 0
 
   function handleCreate(docType: DocType) {
     const id = createDraftModel(docType)
     void navigate({ to: '/modelos/$modelId', params: { modelId: id } })
+  }
+
+  function handleCreateType() {
+    const name = newTypeName.trim()
+    if (!name) return
+    const id = createType(name)
+    setNewTypeOpen(false)
+    setNewTypeName('')
+    handleCreate(id)
   }
 
   return (
@@ -158,9 +177,8 @@ export function ModelsListPage() {
               Modelos
             </h1>
             <p className='max-w-2xl text-sm text-muted-foreground'>
-              Estruturas dos documentos DFD, ETP e TR. A Sustentação cria, edita
-              e publica os modelos que o requisitante usa para gerar os
-              documentos.
+              Estruturas de qualquer tipo de documento. A Sustentação cria,
+              edita e publica os modelos. DFD, ETP e TR são a carga inicial.
             </p>
           </div>
           <DropdownMenu>
@@ -170,17 +188,22 @@ export function ModelsListPage() {
                 Novo modelo
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='w-56'>
+            <DropdownMenuContent align='end' className='w-72'>
               <DropdownMenuLabel>Tipo do documento</DropdownMenuLabel>
-              {docTypes.map((docType) => (
+              {types.map((type) => (
                 <DropdownMenuItem
-                  key={docType}
-                  onSelect={() => handleCreate(docType)}
+                  key={type.id}
+                  onSelect={() => handleCreate(type.id)}
                 >
                   <FileText aria-hidden='true' className='size-4' />
-                  {docTypeLabel(docType)} - {docTypeFullLabel(docType)}
+                  {type.sigla} - {type.nome}
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => setNewTypeOpen(true)}>
+                <Plus aria-hidden='true' className='size-4' />
+                Criar novo tipo…
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -203,10 +226,9 @@ export function ModelsListPage() {
         {hasResults ? (
           groups.map((group) =>
             group.items.length ? (
-              <section key={group.docType} className='space-y-3'>
+              <section key={group.type.id} className='space-y-3'>
                 <SectionLabel>
-                  {docTypeFullLabel(group.docType)} -{' '}
-                  {docTypeLabel(group.docType)}
+                  {group.type.nome} - {group.type.sigla}
                 </SectionLabel>
                 <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-3'>
                   {group.items.map((model) => (
@@ -221,6 +243,49 @@ export function ModelsListPage() {
             Nenhum modelo encontrado para “{query}”.
           </p>
         )}
+
+        <Dialog open={newTypeOpen} onOpenChange={setNewTypeOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Novo tipo de documento</DialogTitle>
+              <DialogDescription>
+                Crie um tipo livre (ex.: Laudo, Termo, Contrato). Nasce sem
+                cadeia, como documento único.
+              </DialogDescription>
+            </DialogHeader>
+            <Field>
+              <FieldLabel htmlFor='new-type-name'>Nome do tipo</FieldLabel>
+              <Input
+                id='new-type-name'
+                value={newTypeName}
+                onChange={(event) => setNewTypeName(event.target.value)}
+                placeholder='Ex.: Laudo técnico'
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    handleCreateType()
+                  }
+                }}
+              />
+            </Field>
+            <DialogFooter>
+              <Button
+                variant='outline'
+                className='rounded-xl'
+                onClick={() => setNewTypeOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className='rounded-xl'
+                disabled={!newTypeName.trim()}
+                onClick={handleCreateType}
+              >
+                Criar e abrir
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </Main>
     </>
   )
