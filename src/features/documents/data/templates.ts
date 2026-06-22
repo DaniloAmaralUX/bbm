@@ -1,3 +1,4 @@
+import { formatCalculated } from './calc'
 import { type DocType, docTypeFullLabel } from './doc-type'
 import {
   formatBRL,
@@ -16,7 +17,18 @@ export type FieldInputType =
   | 'email'
   | 'number'
   | 'currency'
+  | 'calculated'
   | 'itemsTable'
+
+/**
+ * Token de uma fórmula de campo calculado: referência a outro campo, operador
+ * aritmético ou parêntese. A fórmula é guardada como lista de tokens (montada no
+ * construtor) e avaliada por um parser próprio seguro em `calc.ts` (sem `eval`).
+ */
+export type CalcToken =
+  | { kind: 'field'; fieldId: string }
+  | { kind: 'op'; op: '+' | '-' | '*' | '/' }
+  | { kind: 'paren'; paren: '(' | ')' }
 
 export type FieldDefinition = {
   id: string
@@ -26,6 +38,8 @@ export type FieldDefinition = {
   placeholder?: string
   description?: string
   options?: Array<{ label: string; value: string }>
+  /** Campo calculado (input 'calculated'): fórmula em tokens sobre outros campos. */
+  formula?: CalcToken[]
   autocomplete?: string
   spellCheck?: boolean
   /**
@@ -508,6 +522,7 @@ export function buildReviewState(
     pendingLabels.push('Unidade responsável')
 
   Object.values(model.fields).forEach((field) => {
+    if (field.input === 'calculated') return // derivado, nunca preenchido
     if (!field.required) return
     totalRequired += 1
     if (!hasValue(documentData[field.id])) {
@@ -590,6 +605,20 @@ export function buildDocumentSections(
     },
   ]
 
+  // Monta um item label/valor para um campo; null quando vazio (texto/numérico)
+  // ou incompleto/inválido (calculado). Calculados são derivados na hora.
+  const toItem = (
+    field: FieldDefinition
+  ): { label: string; value: string } | null => {
+    if (field.input === 'calculated') {
+      const value = formatCalculated(field, model, documentData)
+      return value === '—' ? null : { label: field.label, value }
+    }
+    const raw = String(documentData[field.id] ?? '')
+    if (!hasValue(raw)) return null
+    return { label: field.label, value: formatFieldValue(field, raw) }
+  }
+
   model.sections.forEach((section) => {
     if (section.kind !== 'fields') return
     const fieldIds = section.fieldIds ?? []
@@ -608,12 +637,10 @@ export function buildDocumentSections(
       if (table) sections.push(table)
       const others = fields
         .filter((field) => field.id !== itemsField.id)
-        .map((field) => ({ field, raw: String(documentData[field.id] ?? '') }))
-        .filter((entry) => hasValue(entry.raw))
-        .map((entry) => ({
-          label: entry.field.label,
-          value: formatFieldValue(entry.field, entry.raw),
-        }))
+        .map(toItem)
+        .filter(
+          (item): item is { label: string; value: string } => item !== null
+        )
       if (others.length) {
         sections.push({ kind: 'keyValue', title: 'Modalidade', items: others })
       }
@@ -630,12 +657,8 @@ export function buildDocumentSections(
     }
 
     const items = fields
-      .map((field) => ({ field, raw: String(documentData[field.id] ?? '') }))
-      .filter((entry) => hasValue(entry.raw))
-      .map((entry) => ({
-        label: entry.field.label,
-        value: formatFieldValue(entry.field, entry.raw),
-      }))
+      .map(toItem)
+      .filter((item): item is { label: string; value: string } => item !== null)
 
     if (items.length) {
       sections.push({ kind: 'keyValue', title: section.title, items })

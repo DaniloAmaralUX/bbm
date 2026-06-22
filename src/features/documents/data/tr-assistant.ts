@@ -63,6 +63,7 @@ export function getFieldSupport(
     field.input === 'email' ||
     field.input === 'number' ||
     field.input === 'currency' ||
+    field.input === 'calculated' ||
     field.input === 'itemsTable'
   ) {
     return 'cadastral'
