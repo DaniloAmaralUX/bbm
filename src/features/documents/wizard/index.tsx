@@ -61,6 +61,7 @@ import {
 } from '@/features/documents/data/inheritance'
 import { parseNumber } from '@/features/documents/data/items'
 import {
+  DEFAULT_ITEM_COLUMNS,
   type FieldDefinition,
   type ModelDefinition,
   type SectionDefinition,
@@ -697,6 +698,7 @@ function FieldRow({
       ) : field.input === 'itemsTable' ? (
         <TRItemsTable
           value={cell.value}
+          columns={field.columns ?? DEFAULT_ITEM_COLUMNS}
           onChange={(next) => onChange(next)}
           readOnly={readOnly}
         />

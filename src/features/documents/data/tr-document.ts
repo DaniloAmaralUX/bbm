@@ -1,13 +1,18 @@
 import { docTypeFullLabel } from './doc-type'
 import { serializeItems, suggestedItems } from './items'
 import { type TRItem } from './schema'
-import { type DocumentSection, itemsToTableSection } from './templates'
+import {
+  DEFAULT_ITEM_COLUMNS,
+  type DocumentSection,
+  itemsToTableSection,
+} from './templates'
 import { trs } from './trs'
 
 // Itens representativos para o artefato (a view e o export sao mock estatico).
 const trItemsTableSection = itemsToTableSection(
   serializeItems(suggestedItems()),
-  '5. Itens e modalidade'
+  '5. Itens e modalidade',
+  DEFAULT_ITEM_COLUMNS
 )
 
 export function getTRById(trId?: string): TRItem | undefined {
