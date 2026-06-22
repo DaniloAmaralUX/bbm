@@ -1,4 +1,4 @@
-import { type DocType, docTypes } from './doc-type'
+import { type DocType, chainTypesOf } from './doc-type'
 import { type TRItem } from './schema'
 
 /**
@@ -26,8 +26,9 @@ export function isConcluded(item: TRItem): boolean {
 
 /** Tipo do próximo documento da cadeia (dfd -> etp -> tr), ou `null` no fim. */
 export function nextChildTypeOf(item: TRItem): DocType | null {
-  const index = docTypes.indexOf(item.docType)
-  return docTypes[index + 1] ?? null
+  const chain = chainTypesOf(item.docType)
+  const index = chain.indexOf(item.docType)
+  return chain[index + 1] ?? null
 }
 
 /**
@@ -60,8 +61,9 @@ export function chainOf(item: TRItem, all: TRItem[]): TRItem[] {
     descendant = childrenOf(descendant.id, all)[0]
   }
 
+  const order = chainTypesOf(item.docType)
   return [...byId.values()].sort(
-    (a, b) => docTypes.indexOf(a.docType) - docTypes.indexOf(b.docType)
+    (a, b) => order.indexOf(a.docType) - order.indexOf(b.docType)
   )
 }
 

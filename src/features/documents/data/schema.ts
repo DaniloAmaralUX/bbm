@@ -19,12 +19,14 @@ export const trNatureValues = [
   'capacitacao',
 ] as const
 
-// Mantido em sincronia com DocType ('dfd' | 'etp' | 'tr') em ./doc-type.
+// Ids dos tipos-semente (DFD/ETP/TR). F2: o tipo virou dado no registry
+// (use-doc-types-store), entao `docType` aceita qualquer id (z.string()); esta
+// lista serve apenas a faceta de filtro/rota das siglas-semente conhecidas.
 export const docTypeValues = ['dfd', 'etp', 'tr'] as const
 
 export const trSchema = z.object({
   id: z.string(),
-  docType: z.enum(docTypeValues),
+  docType: z.string(),
   title: z.string(),
   unit: z.enum(trUnitValues),
   owner: z.string(),

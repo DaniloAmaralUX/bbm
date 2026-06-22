@@ -1,53 +1,88 @@
 /**
- * Vocabulário do tipo de documento da fase preparatória.
+ * Vocabulario do tipo de documento da fase preparatoria.
  *
- * `DocType` é a dimensão de primeira classe que vai parametrizar modelo,
- * formulário, view e export ao longo da Fase 1. Neste PR (PR-1) entra só o
- * vocabulário; os consumidores (ModelDefinition, wizard, rotas) chegam no
- * PR-3/PR-5. Por isso este arquivo está listado como `entry` no knip.json:
- * é um módulo-base introduzido antes do seu primeiro consumidor. Quando o PR-3
- * passar a importar `DocType`, essa entrada pode ser removida.
+ * F2: `DocType` deixou de ser um union fixo e passou a ser o id de um tipo no
+ * registry editavel (`use-doc-types-store`). Os helpers abaixo leem do registry
+ * via `getState()` — o mesmo padrao que `inheritance.ts` ja usa com
+ * `getModelForDocType`/`getModelById`. DFD/ETP/TR sao a carga-semente; tipos
+ * novos (Sustentacao) entram em runtime sem tocar este arquivo.
+ *
+ * Segue listado como `entry` no knip.json: e a fronteira do vocabulario de
+ * tipos, consumida amplamente, e ancora a cadeia de import doc-type -> store ->
+ * semente (esta ultima e um modulo-folha, sem volta para ca).
  */
+import { type DocumentType } from '@/features/documents/data/doc-types-registry'
+import {
+  getAllDocTypes,
+  getDocTypeById,
+} from '@/features/documents/store/use-doc-types-store'
 
-export type DocType = 'dfd' | 'etp' | 'tr'
+export type { DocumentType }
 
-/** Tipos na ordem da cadeia: DFD -> ETP -> TR. */
-export const docTypes: readonly DocType[] = ['dfd', 'etp', 'tr']
+/** Id de um tipo no registry (ex.: 'dfd', 'etp', 'tr', ou um tipo criado depois). */
+export type DocType = string
 
-/** Sigla canônica (glossário). Uso em chips, títulos curtos e códigos. */
-const docTypeLabels: Record<DocType, string> = {
-  dfd: 'DFD',
-  etp: 'ETP',
-  tr: 'TR',
-}
-
-/** Nome por extenso canônico (glossário). Uso em cabeçalhos e artefato oficial. */
-const docTypeFullLabels: Record<DocType, string> = {
-  dfd: 'Documento de Formalização da Demanda',
-  etp: 'Estudo Técnico Preliminar',
-  tr: 'Termo de Referência',
-}
-
+/** Sigla canonica (glossario). Fallback no proprio id se o tipo nao existir. */
 export function docTypeLabel(type: DocType): string {
-  return docTypeLabels[type]
+  return getDocTypeById(type)?.sigla ?? type
 }
 
+/** Nome por extenso canonico (glossario). Fallback no proprio id se ausente. */
 export function docTypeFullLabel(type: DocType): string {
-  return docTypeFullLabels[type]
+  return getDocTypeById(type)?.nome ?? type
 }
 
 /**
  * Tipo do documento ancestral (pai) na cadeia: o ETP herda do DFD e o TR herda
- * do ETP. Modela explicitamente a relação `parentId` da cadeia em memória; a
- * herança sobe por esta relação ate achar um ancestral com valor.
+ * do ETP. A heranca sobe por esta relacao ate achar um ancestral com valor.
+ * `null` para a raiz da cadeia (DFD) ou um tipo avulso.
  */
-const parentByType: Record<DocType, DocType | null> = {
-  dfd: null,
-  etp: 'dfd',
-  tr: 'etp',
+export function parentOf(type: DocType): DocType | null {
+  return getDocTypeById(type)?.parentTypeId ?? null
 }
 
-/** Tipo ancestral imediato na cadeia, ou `null` para o documento inicial (DFD). */
-export function parentOf(type: DocType): DocType | null {
-  return parentByType[type]
+/**
+ * Sequencia linear ordenada da cadeia a que um tipo pertence: sobe ate a raiz
+ * (`parentTypeId === null`) e desce pelo primeiro filho de cada nivel. Para a
+ * semente DFD/ETP/TR retorna `['dfd','etp','tr']` qualquer que seja o tipo dado;
+ * para um tipo avulso (sem pai e sem filhos) retorna so ele. Guarda contra
+ * ciclos em `parentTypeId` (Set de ids visitados) por seguranca de dados.
+ */
+export function chainTypesOf(type: DocType): DocType[] {
+  const all = getAllDocTypes()
+  const byId = new Map(all.map((item) => [item.id, item]))
+
+  // Sobe ate a raiz da cadeia.
+  let rootId = type
+  const seenUp = new Set<string>([type])
+  for (;;) {
+    const parentId = byId.get(rootId)?.parentTypeId
+    if (!parentId || seenUp.has(parentId)) break
+    seenUp.add(parentId)
+    rootId = parentId
+  }
+
+  // Desce pelo primeiro filho de cada nivel (cadeia linear no mock).
+  const chain: DocType[] = []
+  const seenDown = new Set<string>()
+  let currentId: string | undefined = rootId
+  while (currentId && !seenDown.has(currentId)) {
+    seenDown.add(currentId)
+    chain.push(currentId)
+    currentId = all.find((item) => item.parentTypeId === currentId)?.id
+  }
+  return chain
 }
+
+/** Todos os tipos registrados, ordenados (filtros, breakdown, escolha de modelo). */
+export function allDocTypes(): DocType[] {
+  return getAllDocTypes().map((item) => item.id)
+}
+
+/**
+ * @deprecated Use `allDocTypes()` (todos os tipos) ou `chainTypesOf(id)` (a
+ * cadeia de um tipo). Alias transitorio para os consumidores ainda nao migrados
+ * durante a fundacao do F2; removido no ultimo passo. Snapshot da semente na
+ * carga do modulo (o registry e somente-leitura nesta fase).
+ */
+export const docTypes: readonly DocType[] = allDocTypes()
