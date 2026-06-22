@@ -3,7 +3,7 @@ import {
   canStartChildOf,
   nextChildTypeOf,
 } from '@/features/documents/data/chain'
-import { type DocType, docTypes } from '@/features/documents/data/doc-type'
+import { type DocType, chainTypesOf } from '@/features/documents/data/doc-type'
 import {
   type ChainState,
   type DocumentCells,
@@ -297,12 +297,13 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
     set((state) => {
       const childType = nextChildTypeOf(parent)
       if (!childType || !canStartChildOf(parent)) return {}
-      // Marca como concluidos (read-only) o pai e seus ancestrais.
-      const parentIndex = docTypes.indexOf(parent.docType)
-      const done: Partial<Record<DocType, boolean>> = {}
-      for (const docType of docTypes) {
-        if (docTypes.indexOf(docType) <= parentIndex) done[docType] = true
-      }
+      // Marca como concluidos (read-only) o pai e seus ancestrais na cadeia.
+      const chainTypes = chainTypesOf(parent.docType)
+      const parentIndex = chainTypes.indexOf(parent.docType)
+      const done: Record<string, boolean> = {}
+      chainTypes.forEach((docType, index) => {
+        if (index <= parentIndex) done[docType] = true
+      })
       // O TRItem so carrega unit/owner/summary; os demais campos comuns
       // (justificativa, vinculo ao PCA, solucao) ficam vazios no ancestral.
       const parentSeed: Record<string, string> = {
