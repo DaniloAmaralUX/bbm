@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus, Sparkles, Trash2 } from 'lucide-react'
+import { cn } from '@/shared/lib/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -12,35 +13,39 @@ import {
   TableRow,
 } from '@/shared/ui/table'
 import {
+  columnSum,
+  emptyItemRow,
+  formatColumnCell,
+  isMonetaryColumn,
+  summableColumns,
+} from '@/features/documents/data/calc'
+import {
   type ItemRow,
-  emptyItem,
   formatBRL,
   formatQuantity,
-  itemsTotal,
   parseItems,
-  rowTotal,
   serializeItems,
   suggestedItems,
 } from '@/features/documents/data/items'
+import { type ItemColumnDef } from '@/features/documents/data/templates'
 
 type TRItemsTableProps = {
   value: string
+  columns: ItemColumnDef[]
   onChange: (next: string) => void
   readOnly?: boolean
 }
 
-function parseNumber(raw: string): number {
-  const parsed = Number(raw.replace(',', '.'))
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
 /**
- * Editor da tabela de itens da contratação (campo `itemsTable` do TR). As linhas
- * (descrição, unidade, quantidade, preço) sao serializadas como JSON no valor
- * string do campo. "Sugerir itens" preenche linhas mockadas (apoio de IA, RF-11).
+ * Editor da tabela de itens (campo `itemsTable`). As colunas são definidas no
+ * modelo (texto/número/moeda editáveis; calculada é read-only e derivada por
+ * linha). As linhas são serializadas como JSON (mapa célula-por-coluna) no valor
+ * string do campo. "Sugerir itens" só aparece quando as colunas batem com o
+ * padrão (apoio de IA mockado, RF-11). O rodapé soma as colunas somáveis.
  */
 export function TRItemsTable({
   value,
+  columns,
   onChange,
   readOnly = false,
 }: TRItemsTableProps) {
@@ -50,12 +55,25 @@ export function TRItemsTable({
     setRows(next)
     onChange(serializeItems(next))
   }
-
-  const updateRow = (id: string, patch: Partial<ItemRow>) =>
-    commit(rows.map((row) => (row.id === id ? { ...row, ...patch } : row)))
+  const updateCell = (id: string, colId: string, cellValue: string) =>
+    commit(
+      rows.map((row) =>
+        row.id === id
+          ? { ...row, cells: { ...row.cells, [colId]: cellValue } }
+          : row
+      )
+    )
   const removeRow = (id: string) => commit(rows.filter((row) => row.id !== id))
-  const addRow = () => commit([...rows, emptyItem()])
+  const addRow = () => commit([...rows, emptyItemRow()])
   const suggest = () => commit([...rows, ...suggestedItems()])
+
+  const summable = summableColumns(columns)
+  // A sugestão mockada assume as colunas padrão (descrição + preço unitário).
+  const canSuggest =
+    !readOnly &&
+    columns.some((column) => column.id === 'description') &&
+    columns.some((column) => column.id === 'unitPrice')
+  const colCount = columns.length + (readOnly ? 0 : 1)
 
   return (
     <div className='space-y-3'>
@@ -63,11 +81,14 @@ export function TRItemsTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Descrição</TableHead>
-              <TableHead className='w-28'>Unidade</TableHead>
-              <TableHead className='w-24 text-right'>Quantidade</TableHead>
-              <TableHead className='w-32 text-right'>Preço unitário</TableHead>
-              <TableHead className='w-32 text-right'>Total</TableHead>
+              {columns.map((column) => (
+                <TableHead
+                  key={column.id}
+                  className={cn(column.type !== 'text' && 'text-right')}
+                >
+                  {column.label}
+                </TableHead>
+              ))}
               {readOnly ? null : <TableHead className='w-10' />}
             </TableRow>
           </TableHeader>
@@ -75,87 +96,51 @@ export function TRItemsTable({
             {rows.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={readOnly ? 5 : 6}
+                  colSpan={colCount}
                   className='py-6 text-center text-sm text-muted-foreground'
                 >
-                  Nenhum item. Adicione um item ou use "Sugerir itens".
+                  Nenhum item. Adicione um item
+                  {canSuggest ? ' ou use "Sugerir itens"' : ''}.
                 </TableCell>
               </TableRow>
             ) : (
               rows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell>
-                    {readOnly ? (
-                      row.description
-                    ) : (
-                      <Input
-                        value={row.description}
-                        onChange={(event) =>
-                          updateRow(row.id, { description: event.target.value })
-                        }
-                        placeholder='Descrição do item'
-                        aria-label='Descrição do item'
-                        className='h-9 min-w-48'
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {readOnly ? (
-                      row.unit
-                    ) : (
-                      <Input
-                        value={row.unit}
-                        onChange={(event) =>
-                          updateRow(row.id, { unit: event.target.value })
-                        }
-                        placeholder='un'
-                        aria-label='Unidade'
-                        className='h-9'
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell className='text-right tabular-nums'>
-                    {readOnly ? (
-                      formatQuantity(row.quantity)
-                    ) : (
-                      <Input
-                        type='number'
-                        min={0}
-                        inputMode='decimal'
-                        value={row.quantity === 0 ? '' : row.quantity}
-                        onChange={(event) =>
-                          updateRow(row.id, {
-                            quantity: parseNumber(event.target.value),
-                          })
-                        }
-                        aria-label='Quantidade'
-                        className='h-9 text-right'
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell className='text-right tabular-nums'>
-                    {readOnly ? (
-                      formatBRL(row.unitPrice)
-                    ) : (
-                      <Input
-                        type='number'
-                        min={0}
-                        inputMode='decimal'
-                        value={row.unitPrice === 0 ? '' : row.unitPrice}
-                        onChange={(event) =>
-                          updateRow(row.id, {
-                            unitPrice: parseNumber(event.target.value),
-                          })
-                        }
-                        placeholder='0,00'
-                        aria-label='Preço unitário'
-                        className='h-9 text-right'
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell className='text-right font-medium tabular-nums'>
-                    {formatBRL(rowTotal(row))}
-                  </TableCell>
+                  {columns.map((column) => {
+                    const numeric =
+                      column.type === 'number' || column.type === 'currency'
+                    const editable = !readOnly && column.type !== 'calculated'
+                    return (
+                      <TableCell
+                        key={column.id}
+                        className={cn(
+                          (numeric || column.type === 'calculated') &&
+                            'text-right tabular-nums',
+                          column.type === 'calculated' && 'font-medium'
+                        )}
+                      >
+                        {editable ? (
+                          <Input
+                            value={row.cells[column.id] ?? ''}
+                            inputMode={numeric ? 'decimal' : undefined}
+                            onChange={(event) =>
+                              updateCell(row.id, column.id, event.target.value)
+                            }
+                            placeholder={
+                              column.type === 'currency' ? '0,00' : column.label
+                            }
+                            aria-label={column.label}
+                            className={cn(
+                              'h-9',
+                              numeric ? 'text-right' : 'min-w-40'
+                            )}
+                          />
+                        ) : (
+                          formatColumnCell(row, column, columns)
+                        )}
+                      </TableCell>
+                    )
+                  })}
                   {readOnly ? null : (
                     <TableCell>
                       <Button
@@ -164,7 +149,7 @@ export function TRItemsTable({
                         size='icon'
                         className='size-8 text-muted-foreground hover:text-destructive'
                         onClick={() => removeRow(row.id)}
-                        aria-label={`Remover ${row.description || 'item'}`}
+                        aria-label='Remover item'
                       >
                         <Trash2 aria-hidden='true' className='size-4' />
                       </Button>
@@ -192,28 +177,43 @@ export function TRItemsTable({
               <Plus aria-hidden='true' className='size-4' />
               Adicionar item
             </Button>
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              className='rounded-xl'
-              onClick={suggest}
-            >
-              <Sparkles aria-hidden='true' className='size-4' />
-              Sugerir itens
-            </Button>
-            <Badge variant='outline' className='gap-1 text-muted-foreground'>
-              <Sparkles aria-hidden='true' className='size-3' />
-              Sugestão mockada
-            </Badge>
+            {canSuggest ? (
+              <>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  className='rounded-xl'
+                  onClick={suggest}
+                >
+                  <Sparkles aria-hidden='true' className='size-4' />
+                  Sugerir itens
+                </Button>
+                <Badge
+                  variant='outline'
+                  className='gap-1 text-muted-foreground'
+                >
+                  <Sparkles aria-hidden='true' className='size-3' />
+                  Sugestão mockada
+                </Badge>
+              </>
+            ) : null}
           </div>
         )}
-        <div className='text-sm text-muted-foreground'>
-          Total geral:{' '}
-          <span className='font-semibold text-foreground tabular-nums'>
-            {formatBRL(itemsTotal(rows))}
-          </span>
-        </div>
+        {summable.length > 0 && rows.length > 0 ? (
+          <div className='flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground'>
+            {summable.map((column) => (
+              <span key={column.id}>
+                {column.label}:{' '}
+                <span className='font-semibold text-foreground tabular-nums'>
+                  {isMonetaryColumn(column, columns)
+                    ? formatBRL(columnSum(rows, column, columns))
+                    : formatQuantity(columnSum(rows, column, columns))}
+                </span>
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
     </div>
   )

@@ -1,13 +1,12 @@
-import { formatCalculated } from './calc'
-import { type DocType, docTypeFullLabel } from './doc-type'
 import {
-  formatBRL,
-  formatQuantity,
-  itemsTotal,
-  parseItems,
-  parseNumber,
-  rowTotal,
-} from './items'
+  columnSum,
+  formatCalculated,
+  formatColumnCell,
+  isMonetaryColumn,
+  summableColumns,
+} from './calc'
+import { type DocType, docTypeFullLabel } from './doc-type'
+import { formatBRL, formatQuantity, parseItems, parseNumber } from './items'
 
 export type FieldInputType =
   | 'text'
@@ -30,6 +29,21 @@ export type CalcToken =
   | { kind: 'op'; op: '+' | '-' | '*' | '/' }
   | { kind: 'paren'; paren: '(' | ')' }
 
+/** Tipo de uma coluna da tabela de itens (campo `itemsTable`). */
+export type ItemColumnType = 'text' | 'number' | 'currency' | 'calculated'
+
+/**
+ * Coluna configurável da tabela de itens: nome + tipo. Colunas `calculated`
+ * têm uma fórmula por linha sobre OUTRAS colunas (os `fieldId` dos tokens são
+ * ids de coluna), avaliada pelo mesmo motor seguro de `calc.ts`.
+ */
+export type ItemColumnDef = {
+  id: string
+  label: string
+  type: ItemColumnType
+  formula?: CalcToken[]
+}
+
 export type FieldDefinition = {
   id: string
   label: string
@@ -40,6 +54,8 @@ export type FieldDefinition = {
   options?: Array<{ label: string; value: string }>
   /** Campo calculado (input 'calculated'): fórmula em tokens sobre outros campos. */
   formula?: CalcToken[]
+  /** Tabela de itens (input 'itemsTable'): definição das colunas. */
+  columns?: ItemColumnDef[]
   autocomplete?: string
   spellCheck?: boolean
   /**
@@ -126,6 +142,28 @@ const observedModeOptions = [
   { label: 'Concorrência', value: 'concorrencia' },
   { label: 'Dispensa de licitação', value: 'dispensa' },
   { label: 'Inexigibilidade', value: 'inexigibilidade' },
+]
+
+/**
+ * Colunas padrão da tabela de itens (semente do TR e carga de "Sugerir itens").
+ * A coluna `total` é calculada (Quantidade × Preço unitário), preservando o
+ * comportamento histórico do TR agora que as colunas são configuráveis.
+ */
+export const DEFAULT_ITEM_COLUMNS: ItemColumnDef[] = [
+  { id: 'description', label: 'Descrição', type: 'text' },
+  { id: 'unit', label: 'Unidade', type: 'text' },
+  { id: 'quantity', label: 'Quantidade', type: 'number' },
+  { id: 'unitPrice', label: 'Preço unitário', type: 'currency' },
+  {
+    id: 'total',
+    label: 'Total',
+    type: 'calculated',
+    formula: [
+      { kind: 'field', fieldId: 'quantity' },
+      { kind: 'op', op: '*' },
+      { kind: 'field', fieldId: 'unitPrice' },
+    ],
+  },
 ]
 
 /**
@@ -430,6 +468,7 @@ const trModel: ModelDefinition = {
       placeholder: 'Itens, unidades, quantidades e preços de referência…',
       description:
         'Tabela de itens da contratação. Use "Sugerir itens" para o apoio de IA.',
+      columns: DEFAULT_ITEM_COLUMNS,
       autocomplete: 'off',
     },
     observedMode: {
@@ -545,22 +584,33 @@ export function buildReviewState(
  */
 export function itemsToTableSection(
   value: string,
-  title: string
+  title: string,
+  columns: ItemColumnDef[]
 ): DocumentSection | null {
+  if (!columns.length) return null
   const rows = parseItems(value)
   if (!rows.length) return null
-  const tableRows = rows.map((row) => [
-    row.description,
-    row.unit,
-    formatQuantity(row.quantity),
-    formatBRL(row.unitPrice),
-    formatBRL(rowTotal(row)),
-  ])
-  tableRows.push(['Total geral', '', '', '', formatBRL(itemsTotal(rows))])
+  const tableRows = rows.map((row) =>
+    columns.map((column) => formatColumnCell(row, column, columns))
+  )
+  const summable = summableColumns(columns)
+  if (summable.length) {
+    const summableIds = new Set(summable.map((column) => column.id))
+    tableRows.push(
+      columns.map((column, index) => {
+        if (index === 0) return 'Total geral'
+        if (!summableIds.has(column.id)) return ''
+        const total = columnSum(rows, column, columns)
+        return isMonetaryColumn(column, columns)
+          ? formatBRL(total)
+          : formatQuantity(total)
+      })
+    )
+  }
   return {
     kind: 'table',
     title,
-    columns: ['Descrição', 'Unidade', 'Quantidade', 'Preço unitário', 'Total'],
+    columns: columns.map((column) => column.label),
     rows: tableRows,
   }
 }
@@ -632,7 +682,8 @@ export function buildDocumentSections(
     if (itemsField) {
       const table = itemsToTableSection(
         String(documentData[itemsField.id] ?? ''),
-        section.title
+        section.title,
+        itemsField.columns ?? DEFAULT_ITEM_COLUMNS
       )
       if (table) sections.push(table)
       const others = fields

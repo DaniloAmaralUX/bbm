@@ -51,10 +51,12 @@ function PreviewControl({ field }: { field: FieldDefinition }) {
     )
   }
   if (field.input === 'itemsTable') {
+    const labels = (field.columns ?? []).map((column) => column.label)
     return (
       <div className='rounded-2xl border border-dashed px-4 py-3 text-sm text-muted-foreground'>
-        Tabela de itens (descrição, unidade, quantidade, preço unitário, total),
-        com sugestão por IA.
+        {labels.length
+          ? `Tabela de itens — colunas: ${labels.join(', ')}.`
+          : 'Tabela de itens (colunas configuráveis).'}
       </div>
     )
   }

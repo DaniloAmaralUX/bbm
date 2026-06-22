@@ -51,9 +51,12 @@ import {
 } from '@/features/documents/data/calc'
 import { docTypeLabel } from '@/features/documents/data/doc-type'
 import {
+  DEFAULT_ITEM_COLUMNS,
   type CalcToken,
   type FieldDefinition,
   type FieldInputType,
+  type ItemColumnDef,
+  type ItemColumnType,
   type ModelDefinition,
   type SectionDefinition,
 } from '@/features/documents/data/templates'
@@ -233,11 +236,133 @@ function OptionsEditor({
   )
 }
 
+const formulaOperators: Array<{ op: '+' | '-' | '*' | '/'; symbol: string }> = [
+  { op: '+', symbol: '+' },
+  { op: '-', symbol: '−' },
+  { op: '*', symbol: '×' },
+  { op: '/', symbol: '÷' },
+]
+
 /**
- * Editor de fórmula de um campo calculado: monta uma lista de tokens (campos +
- * operadores + parênteses) escolhendo no Select e nos botões. Avaliação é
- * derivada no preenchimento; aqui só montamos/validamos a estrutura. Só campos
- * numéricos/moeda/calculados (exceto o próprio) podem entrar.
+ * Montador de fórmula genérico (tokens): Select de candidatos + operadores +
+ * parênteses + remover/limpar, com prévia legível e aviso de estrutura
+ * inválida. Reusado pelo campo calculado (F4) e pela coluna calculada (F1) —
+ * `candidates` são campos do modelo ou colunas da tabela.
+ */
+function FormulaBuilder({
+  candidates,
+  formula,
+  onChange,
+}: {
+  candidates: Array<{ id: string; label: string }>
+  formula: CalcToken[]
+  onChange: (next: CalcToken[]) => void
+}) {
+  const append = (token: CalcToken) => onChange([...formula, token])
+  const pseudoModel = {
+    fields: Object.fromEntries(
+      candidates.map((item) => [
+        item.id,
+        { id: item.id, label: item.label, input: 'number' },
+      ])
+    ),
+  } as ModelDefinition
+  const readable = describeFormula(formula, pseudoModel)
+  const wellFormed = isFormulaWellFormed(formula)
+
+  return (
+    <>
+      <div className='flex min-h-9 flex-wrap items-center gap-1.5 rounded-xl border bg-muted/20 px-3 py-2'>
+        {formula.length ? (
+          <span className='text-sm'>{readable}</span>
+        ) : (
+          <span className='text-sm text-muted-foreground'>
+            Monte a fórmula com os itens e operadores abaixo.
+          </span>
+        )}
+      </div>
+      <div className='flex flex-wrap items-center gap-2'>
+        <Select
+          value=''
+          onValueChange={(fieldId) => append({ kind: 'field', fieldId })}
+        >
+          <SelectTrigger
+            className='w-auto min-w-44'
+            aria-label='Adicionar item à fórmula'
+          >
+            <SelectValue placeholder='Adicionar campo' />
+          </SelectTrigger>
+          <SelectContent>
+            {candidates.map((item) => (
+              <SelectItem key={item.id} value={item.id}>
+                {item.label || 'Sem rótulo'}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {formulaOperators.map(({ op, symbol }) => (
+          <Button
+            key={op}
+            type='button'
+            variant='outline'
+            size='icon'
+            aria-label={`Operador ${symbol}`}
+            onClick={() => append({ kind: 'op', op })}
+          >
+            {symbol}
+          </Button>
+        ))}
+        <Button
+          type='button'
+          variant='outline'
+          size='icon'
+          aria-label='Abre parêntese'
+          onClick={() => append({ kind: 'paren', paren: '(' })}
+        >
+          (
+        </Button>
+        <Button
+          type='button'
+          variant='outline'
+          size='icon'
+          aria-label='Fecha parêntese'
+          onClick={() => append({ kind: 'paren', paren: ')' })}
+        >
+          )
+        </Button>
+        <Button
+          type='button'
+          variant='ghost'
+          size='sm'
+          className='text-muted-foreground'
+          disabled={formula.length === 0}
+          onClick={() => onChange(formula.slice(0, -1))}
+        >
+          Remover último
+        </Button>
+        <Button
+          type='button'
+          variant='ghost'
+          size='sm'
+          className='text-muted-foreground hover:text-destructive'
+          disabled={formula.length === 0}
+          onClick={() => onChange([])}
+        >
+          Limpar
+        </Button>
+      </div>
+      {formula.length > 0 && !wellFormed ? (
+        <FieldError>
+          Fórmula incompleta ou inválida. Verifique operadores e parênteses.
+        </FieldError>
+      ) : null}
+    </>
+  )
+}
+
+/**
+ * Editor de fórmula de um campo CALCULADO (F4): candidatos = campos numéricos/
+ * moeda/calculados do modelo (exceto o próprio). Reusa o FormulaBuilder.
  */
 function FormulaEditor({
   modelId,
@@ -250,29 +375,17 @@ function FormulaEditor({
   const model = useModelsStore((state) =>
     state.models.find((item) => item.id === modelId)
   )
-  const formula = field.formula ?? []
   const candidates = model
-    ? Object.values(model.fields).filter(
-        (item) =>
-          item.id !== field.id &&
-          (item.input === 'number' ||
-            item.input === 'currency' ||
-            item.input === 'calculated')
-      )
+    ? Object.values(model.fields)
+        .filter(
+          (item) =>
+            item.id !== field.id &&
+            (item.input === 'number' ||
+              item.input === 'currency' ||
+              item.input === 'calculated')
+        )
+        .map((item) => ({ id: item.id, label: item.label }))
     : []
-
-  const setFormula = (next: CalcToken[]) =>
-    updateField(modelId, field.id, { formula: next })
-  const append = (token: CalcToken) => setFormula([...formula, token])
-
-  const readable = model ? describeFormula(formula, model) : ''
-  const wellFormed = isFormulaWellFormed(formula)
-  const operators: Array<{ op: '+' | '-' | '*' | '/'; symbol: string }> = [
-    { op: '+', symbol: '+' },
-    { op: '-', symbol: '−' },
-    { op: '*', symbol: '×' },
-    { op: '/', symbol: '÷' },
-  ]
 
   return (
     <Field>
@@ -283,96 +396,170 @@ function FormulaEditor({
           cálculo.
         </p>
       ) : (
-        <>
-          <div className='flex min-h-9 flex-wrap items-center gap-1.5 rounded-xl border bg-muted/20 px-3 py-2'>
-            {formula.length ? (
-              <span className='text-sm'>{readable}</span>
-            ) : (
-              <span className='text-sm text-muted-foreground'>
-                Monte a fórmula com os campos e operadores abaixo.
-              </span>
-            )}
-          </div>
-          <div className='flex flex-wrap items-center gap-2'>
-            <Select
-              value=''
-              onValueChange={(fieldId) => append({ kind: 'field', fieldId })}
-            >
-              <SelectTrigger
-                className='w-auto min-w-44'
-                aria-label='Adicionar campo à fórmula'
-              >
-                <SelectValue placeholder='Adicionar campo' />
-              </SelectTrigger>
-              <SelectContent>
-                {candidates.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.label || 'Sem rótulo'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {operators.map(({ op, symbol }) => (
-              <Button
-                key={op}
-                type='button'
-                variant='outline'
-                size='icon'
-                aria-label={`Operador ${symbol}`}
-                onClick={() => append({ kind: 'op', op })}
-              >
-                {symbol}
-              </Button>
-            ))}
-            <Button
-              type='button'
-              variant='outline'
-              size='icon'
-              aria-label='Abre parêntese'
-              onClick={() => append({ kind: 'paren', paren: '(' })}
-            >
-              (
-            </Button>
-            <Button
-              type='button'
-              variant='outline'
-              size='icon'
-              aria-label='Fecha parêntese'
-              onClick={() => append({ kind: 'paren', paren: ')' })}
-            >
-              )
-            </Button>
-            <Button
-              type='button'
-              variant='ghost'
-              size='sm'
-              className='text-muted-foreground'
-              disabled={formula.length === 0}
-              onClick={() => setFormula(formula.slice(0, -1))}
-            >
-              Remover último
-            </Button>
-            <Button
-              type='button'
-              variant='ghost'
-              size='sm'
-              className='text-muted-foreground hover:text-destructive'
-              disabled={formula.length === 0}
-              onClick={() => setFormula([])}
-            >
-              Limpar
-            </Button>
-          </div>
-          {formula.length > 0 && !wellFormed ? (
-            <FieldError>
-              Fórmula incompleta ou inválida. Verifique operadores e parênteses.
-            </FieldError>
-          ) : null}
-        </>
+        <FormulaBuilder
+          candidates={candidates}
+          formula={field.formula ?? []}
+          onChange={(next) => updateField(modelId, field.id, { formula: next })}
+        />
       )}
       <FieldDescription>
         Resultado calculado automaticamente a partir de outros campos numéricos.
         Operadores: + − × ÷ e parênteses.
+      </FieldDescription>
+    </Field>
+  )
+}
+
+const columnTypeLabels: Record<ItemColumnType, string> = {
+  text: 'Texto',
+  number: 'Número',
+  currency: 'Moeda (R$)',
+  calculated: 'Calculada',
+}
+
+const columnTypeOrder: ItemColumnType[] = [
+  'text',
+  'number',
+  'currency',
+  'calculated',
+]
+
+/**
+ * Editor das colunas de uma tabela de itens (campo `itemsTable`, F1): nome +
+ * tipo por coluna; colunas calculadas têm uma fórmula por linha sobre as outras
+ * colunas (reusa o FormulaBuilder). Sem colunas definidas, parte do padrão.
+ */
+function ColumnsEditor({
+  modelId,
+  field,
+}: {
+  modelId: string
+  field: FieldDefinition
+}) {
+  const updateField = useModelsStore((state) => state.updateField)
+  const columns = field.columns ?? DEFAULT_ITEM_COLUMNS
+
+  const setColumns = (next: ItemColumnDef[]) =>
+    updateField(modelId, field.id, { columns: next })
+  const updateColumn = (id: string, patch: Partial<ItemColumnDef>) =>
+    setColumns(
+      columns.map((col) => (col.id === id ? { ...col, ...patch } : col))
+    )
+  const removeColumn = (id: string) =>
+    setColumns(columns.filter((col) => col.id !== id))
+  const addColumn = () =>
+    setColumns([
+      ...columns,
+      {
+        id: `col-${crypto.randomUUID().slice(0, 8)}`,
+        label: `Coluna ${columns.length + 1}`,
+        type: 'text',
+      },
+    ])
+
+  return (
+    <Field>
+      <FieldLabel>Colunas da tabela</FieldLabel>
+      <div className='flex flex-col gap-3'>
+        {columns.map((column) => {
+          const candidates = columns
+            .filter(
+              (col) =>
+                col.id !== column.id &&
+                (col.type === 'number' ||
+                  col.type === 'currency' ||
+                  col.type === 'calculated')
+            )
+            .map((col) => ({ id: col.id, label: col.label }))
+          return (
+            <div
+              key={column.id}
+              className='grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-3'
+            >
+              <div className='grid gap-3 sm:grid-cols-[1fr_12rem_auto] sm:items-end'>
+                <Field>
+                  <FieldLabel htmlFor={`${column.id}-label`}>
+                    Nome da coluna
+                  </FieldLabel>
+                  <Input
+                    id={`${column.id}-label`}
+                    value={column.label}
+                    onChange={(event) =>
+                      updateColumn(column.id, { label: event.target.value })
+                    }
+                    placeholder='Ex.: Quantidade'
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor={`${column.id}-coltype`}>Tipo</FieldLabel>
+                  <Select
+                    value={column.type}
+                    onValueChange={(value) => {
+                      const type = value as ItemColumnType
+                      updateColumn(column.id, {
+                        type,
+                        formula:
+                          type === 'calculated'
+                            ? (column.formula ?? [])
+                            : undefined,
+                      })
+                    }}
+                  >
+                    <SelectTrigger id={`${column.id}-coltype`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {columnTypeOrder.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {columnTypeLabels[type]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  className='rounded-xl text-muted-foreground hover:text-destructive'
+                  onClick={() => removeColumn(column.id)}
+                >
+                  <Trash2 aria-hidden='true' className='size-4' />
+                  Remover
+                </Button>
+              </div>
+              {column.type === 'calculated' ? (
+                candidates.length === 0 ? (
+                  <p className='text-sm text-muted-foreground'>
+                    Adicione colunas de número ou moeda para usar no cálculo.
+                  </p>
+                ) : (
+                  <FormulaBuilder
+                    candidates={candidates}
+                    formula={column.formula ?? []}
+                    onChange={(next) =>
+                      updateColumn(column.id, { formula: next })
+                    }
+                  />
+                )
+              ) : null}
+            </div>
+          )
+        })}
+      </div>
+      <Button
+        type='button'
+        variant='outline'
+        size='sm'
+        className='w-fit rounded-xl'
+        onClick={addColumn}
+      >
+        <Plus aria-hidden='true' className='size-4' />
+        Adicionar coluna
+      </Button>
+      <FieldDescription>
+        Defina as colunas da tabela. Colunas calculadas derivam o valor por
+        linha (ex.: Total = Quantidade × Preço).
       </FieldDescription>
     </Field>
   )
@@ -461,6 +648,10 @@ function FieldEditor({
 
       {field.input === 'calculated' ? (
         <FormulaEditor modelId={modelId} field={field} />
+      ) : null}
+
+      {field.input === 'itemsTable' ? (
+        <ColumnsEditor modelId={modelId} field={field} />
       ) : null}
 
       <div className='flex flex-wrap items-center justify-between gap-4'>

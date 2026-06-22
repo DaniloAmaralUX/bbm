@@ -1,8 +1,9 @@
-import { formatBRL, formatQuantity, parseNumber } from './items'
+import { type ItemRow, formatBRL, formatQuantity, parseNumber } from './items'
 import {
   type CalcToken,
   type DocumentData,
   type FieldDefinition,
+  type ItemColumnDef,
   type ModelDefinition,
 } from './templates'
 
@@ -197,4 +198,111 @@ export function describeFormula(
       return token.paren
     })
     .join(' ')
+}
+
+// --- Colunas calculadas da tabela de itens (reusam o avaliador acima) ---
+
+/**
+ * Pseudo-modelo a partir das colunas: cada coluna vira um "campo", para o
+ * avaliador resolver as referências da fórmula por id de coluna (o `data` é o
+ * mapa de células da linha).
+ */
+function columnsModel(columns: ItemColumnDef[]): ModelDefinition {
+  const fields: Record<string, FieldDefinition> = {}
+  for (const column of columns) {
+    fields[column.id] = {
+      id: column.id,
+      label: column.label,
+      input: column.type,
+      formula: column.formula,
+    }
+  }
+  return { fields } as ModelDefinition
+}
+
+/** Para o avaliador, a fórmula da coluna usa os mesmos tokens (refs = id de coluna). */
+export function computeColumnValue(
+  row: ItemRow,
+  column: ItemColumnDef,
+  columns: ItemColumnDef[]
+): number | null {
+  if (column.type === 'text') return null
+  if (column.type === 'number' || column.type === 'currency') {
+    const value = parseNumber(row.cells[column.id] ?? '')
+    return Number.isNaN(value) ? null : value
+  }
+  return evaluateFormula(
+    column.formula ?? [],
+    columnsModel(columns),
+    row.cells,
+    new Set([column.id])
+  )
+}
+
+/** Coluna monetária? (currency, ou calculada que referencia uma coluna currency.) */
+export function isMonetaryColumn(
+  column: ItemColumnDef,
+  columns: ItemColumnDef[]
+): boolean {
+  if (column.type === 'currency') return true
+  if (column.type === 'calculated') {
+    return (column.formula ?? []).some(
+      (token) =>
+        token.kind === 'field' &&
+        columns.find((c) => c.id === token.fieldId)?.type === 'currency'
+    )
+  }
+  return false
+}
+
+/** Valor de exibição de uma célula; calculada incompleta => "—". */
+export function formatColumnCell(
+  row: ItemRow,
+  column: ItemColumnDef,
+  columns: ItemColumnDef[]
+): string {
+  if (column.type === 'text') return row.cells[column.id] ?? ''
+  const value = computeColumnValue(row, column, columns)
+  if (value === null) return column.type === 'calculated' ? '—' : ''
+  return isMonetaryColumn(column, columns)
+    ? formatBRL(value)
+    : formatQuantity(value)
+}
+
+/**
+ * Colunas que recebem "Total geral" no rodapé: as calculadas e as de moeda que
+ * NÃO são referenciadas por nenhuma coluna calculada (evita somar, por ex., o
+ * "Preço unitário" além do "Total").
+ */
+export function summableColumns(columns: ItemColumnDef[]): ItemColumnDef[] {
+  const referenced = new Set<string>()
+  for (const column of columns) {
+    if (column.type === 'calculated') {
+      for (const token of column.formula ?? []) {
+        if (token.kind === 'field') referenced.add(token.fieldId)
+      }
+    }
+  }
+  return columns.filter(
+    (column) =>
+      column.type === 'calculated' ||
+      (column.type === 'currency' && !referenced.has(column.id))
+  )
+}
+
+/** Soma de uma coluna ao longo das linhas (valores nulos contam como 0). */
+export function columnSum(
+  rows: ItemRow[],
+  column: ItemColumnDef,
+  columns: ItemColumnDef[]
+): number {
+  return rows.reduce(
+    (sum, row) => sum + (computeColumnValue(row, column, columns) ?? 0),
+    0
+  )
+}
+
+/** Linha vazia para o editor (células em branco). */
+export function emptyItemRow(): ItemRow {
+  return { id: crypto.randomUUID(), cells: {} }
 }
