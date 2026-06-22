@@ -58,6 +58,24 @@ function PreviewControl({ field }: { field: FieldDefinition }) {
       </div>
     )
   }
+  if (field.input === 'number' || field.input === 'currency') {
+    const isCurrency = field.input === 'currency'
+    return (
+      <div className='relative'>
+        {isCurrency ? (
+          <span className='pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground'>
+            R$
+          </span>
+        ) : null}
+        <Input
+          disabled
+          inputMode='decimal'
+          placeholder={field.placeholder ?? (isCurrency ? '0,00' : 'Número')}
+          className={isCurrency ? 'pl-9' : undefined}
+        />
+      </div>
+    )
+  }
   return (
     <Input
       disabled

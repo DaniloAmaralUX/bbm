@@ -4,6 +4,7 @@ import {
   formatQuantity,
   itemsTotal,
   parseItems,
+  parseNumber,
   rowTotal,
 } from './items'
 
@@ -13,6 +14,8 @@ export type FieldInputType =
   | 'select'
   | 'date'
   | 'email'
+  | 'number'
+  | 'currency'
   | 'itemsTable'
 
 export type FieldDefinition = {
@@ -547,6 +550,22 @@ export function itemsToTableSection(
   }
 }
 
+/**
+ * Formata o valor de um campo para exibição no artefato: moeda em R$ e número
+ * em pt-BR; demais tipos saem como digitados. Valor não-numérico cai no texto cru.
+ */
+function formatFieldValue(field: FieldDefinition, raw: string): string {
+  if (field.input === 'currency') {
+    const value = parseNumber(raw)
+    return Number.isNaN(value) ? raw : formatBRL(value)
+  }
+  if (field.input === 'number') {
+    const value = parseNumber(raw)
+    return Number.isNaN(value) ? raw : formatQuantity(value)
+  }
+  return raw
+}
+
 export function buildDocumentSections(
   context: {
     docType: DocType
@@ -589,11 +608,12 @@ export function buildDocumentSections(
       if (table) sections.push(table)
       const others = fields
         .filter((field) => field.id !== itemsField.id)
-        .map((field) => ({
-          label: field.label,
-          value: String(documentData[field.id] ?? ''),
+        .map((field) => ({ field, raw: String(documentData[field.id] ?? '') }))
+        .filter((entry) => hasValue(entry.raw))
+        .map((entry) => ({
+          label: entry.field.label,
+          value: formatFieldValue(entry.field, entry.raw),
         }))
-        .filter((item) => hasValue(item.value))
       if (others.length) {
         sections.push({ kind: 'keyValue', title: 'Modalidade', items: others })
       }
@@ -610,11 +630,12 @@ export function buildDocumentSections(
     }
 
     const items = fields
-      .map((field) => ({
-        label: field.label,
-        value: String(documentData[field.id] ?? ''),
+      .map((field) => ({ field, raw: String(documentData[field.id] ?? '') }))
+      .filter((entry) => hasValue(entry.raw))
+      .map((entry) => ({
+        label: entry.field.label,
+        value: formatFieldValue(entry.field, entry.raw),
       }))
-      .filter((item) => hasValue(item.value))
 
     if (items.length) {
       sections.push({ kind: 'keyValue', title: section.title, items })

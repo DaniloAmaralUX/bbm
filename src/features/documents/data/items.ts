@@ -29,6 +29,19 @@ export function formatQuantity(value: number): string {
   return numberFormatter.format(Number.isFinite(value) ? value : 0)
 }
 
+/**
+ * Lê um número de uma string. Aceita ponto ("1234.56") e vírgula decimal pt-BR
+ * ("1234,56"). Retorna `NaN` para vazio/forma inválida. Base comum dos campos
+ * numéricos/moeda e (futuramente) das colunas/itens calculados.
+ */
+export function parseNumber(value: string): number {
+  if (typeof value !== 'string') return NaN
+  const trimmed = value.trim()
+  if (!trimmed) return NaN
+  const n = Number(trimmed.replace(',', '.'))
+  return Number.isFinite(n) ? n : NaN
+}
+
 function isItemRow(value: unknown): value is ItemRow {
   if (typeof value !== 'object' || value === null) return false
   const row = value as Record<string, unknown>

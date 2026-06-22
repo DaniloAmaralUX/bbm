@@ -61,6 +61,8 @@ const inputTypeLabels: Record<FieldInputType, string> = {
   select: 'Seleção',
   date: 'Data',
   email: 'E-mail',
+  number: 'Número',
+  currency: 'Moeda (R$)',
   itemsTable: 'Tabela de itens',
 }
 
@@ -70,6 +72,8 @@ const inputTypeOrder: FieldInputType[] = [
   'select',
   'date',
   'email',
+  'number',
+  'currency',
   'itemsTable',
 ]
 

@@ -58,6 +58,7 @@ import {
   isDocumentLocked,
   resolveStepModel,
 } from '@/features/documents/data/inheritance'
+import { parseNumber } from '@/features/documents/data/items'
 import {
   type FieldDefinition,
   type ModelDefinition,
@@ -719,6 +720,33 @@ function FieldRow({
           className={textareaClassName}
           {...ariaProps}
         />
+      ) : field.input === 'number' || field.input === 'currency' ? (
+        <div className='relative'>
+          {field.input === 'currency' ? (
+            <span className='pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground'>
+              R$
+            </span>
+          ) : null}
+          <Input
+            id={field.id}
+            name={field.id}
+            type='text'
+            inputMode='decimal'
+            data-field-id={field.id}
+            autoComplete='off'
+            enterKeyHint='next'
+            placeholder={field.placeholder}
+            value={cell.value}
+            disabled={readOnly}
+            onChange={(event) => onChange(event.target.value)}
+            onFocus={onFocus}
+            className={cn(
+              controlClassName,
+              field.input === 'currency' && 'pl-9'
+            )}
+            {...ariaProps}
+          />
+        </div>
       ) : (
         <Input
           id={field.id}
@@ -791,6 +819,12 @@ function validateDocument(
     }
     if (field.input === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       nextErrors[field.id] = 'Informe um e-mail válido.'
+    }
+    if (
+      (field.input === 'number' || field.input === 'currency') &&
+      Number.isNaN(parseNumber(value))
+    ) {
+      nextErrors[field.id] = 'Informe um número válido.'
     }
   })
   return nextErrors
