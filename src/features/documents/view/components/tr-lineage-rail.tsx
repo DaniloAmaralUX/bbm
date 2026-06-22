@@ -12,9 +12,10 @@ import {
 import { trStatusTokens } from '@/features/documents/data/data'
 import {
   type DocType,
+  chainTypesOf,
   docTypeFullLabel,
   docTypeLabel,
-  docTypes,
+  parentOf,
 } from '@/features/documents/data/doc-type'
 import { type TRItem } from '@/features/documents/data/schema'
 
@@ -33,10 +34,17 @@ export function TRLineageRail({
   chain: TRItem[]
   currentId: string
 }) {
-  const rootIsDfd = chain[0]?.docType === 'dfd'
+  // Tipo do no mais ancestral presente na cadeia da instancia.
+  const rootType = chain[0]?.docType
+  const chainTypes = rootType ? chainTypesOf(rootType) : []
+  // Cadeia enraizada: comeca num tipo-raiz (sem pai) que encabeca uma cadeia.
+  const isEnrooted =
+    rootType !== undefined &&
+    parentOf(rootType) === null &&
+    chainTypes.length > 1
 
-  // Documento avulso (cadeia nao enraizada num DFD): mostra so o proprio no.
-  if (!rootIsDfd) {
+  // Documento avulso (cadeia nao enraizada): mostra so o proprio no.
+  if (!isEnrooted) {
     const doc = chain[0]
     return (
       <Card className='rounded-2xl border-0 shadow-border'>
@@ -51,7 +59,7 @@ export function TRLineageRail({
             <LineageNode
               docType={doc.docType}
               doc={doc}
-              index={docTypes.indexOf(doc.docType)}
+              index={chainTypesOf(doc.docType).indexOf(doc.docType)}
               isCurrent
             />
           ) : null}
@@ -72,9 +80,9 @@ export function TRLineageRail({
       </CardHeader>
       <CardContent>
         <ol className='flex flex-col gap-3 sm:flex-row sm:items-stretch'>
-          {docTypes.map((docType, index) => {
+          {chainTypes.map((docType, index) => {
             const doc = byType.get(docType)
-            const isLast = index === docTypes.length - 1
+            const isLast = index === chainTypes.length - 1
             return (
               <li
                 key={docType}

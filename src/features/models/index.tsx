@@ -26,9 +26,9 @@ import { Input } from '@/shared/ui/input'
 import { SectionLabel } from '@/shared/components/section-label'
 import {
   type DocType,
+  allDocTypes,
   docTypeFullLabel,
   docTypeLabel,
-  docTypes,
 } from '@/features/documents/data/doc-type'
 import { type ModelDefinition } from '@/features/documents/data/templates'
 import { useModelsStore } from './store/use-models-store'
@@ -132,7 +132,7 @@ export function ModelsListPage() {
   )
   const groups = useMemo(
     () =>
-      docTypes.map((docType) => ({
+      allDocTypes().map((docType) => ({
         docType,
         items: filtered.filter((model) => model.docType === docType),
       })),
@@ -172,7 +172,7 @@ export function ModelsListPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-56'>
               <DropdownMenuLabel>Tipo do documento</DropdownMenuLabel>
-              {docTypes.map((docType) => (
+              {allDocTypes().map((docType) => (
                 <DropdownMenuItem
                   key={docType}
                   onSelect={() => handleCreate(docType)}
