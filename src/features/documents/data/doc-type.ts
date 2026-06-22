@@ -1,53 +1,32 @@
+import { getDocumentType } from './use-document-types-store'
+
 /**
- * Vocabulário do tipo de documento da fase preparatória.
- *
- * `DocType` é a dimensão de primeira classe que vai parametrizar modelo,
- * formulário, view e export ao longo da Fase 1. Neste PR (PR-1) entra só o
- * vocabulário; os consumidores (ModelDefinition, wizard, rotas) chegam no
- * PR-3/PR-5. Por isso este arquivo está listado como `entry` no knip.json:
- * é um módulo-base introduzido antes do seu primeiro consumidor. Quando o PR-3
- * passar a importar `DocType`, essa entrada pode ser removida.
+ * Vocabulário do tipo de documento. Agora o tipo é DADO (registry em
+ * `use-document-types-store`): DFD/ETP/TR são carga inicial e o usuário pode
+ * criar tipos livres. Por isso `DocType` é um id (`string`); os rótulos e o pai
+ * da cadeia são lidos do registry. A CADEIA do wizard usa apenas os tipos-
+ * semente, na ordem abaixo (DFD -> ETP -> TR) — tipos livres são standalone.
  */
+export type DocType = string
 
-export type DocType = 'dfd' | 'etp' | 'tr'
-
-/** Tipos na ordem da cadeia: DFD -> ETP -> TR. */
+/** Tipos da cadeia, em ordem (DFD -> ETP -> TR). Tipos livres não entram aqui. */
 export const docTypes: readonly DocType[] = ['dfd', 'etp', 'tr']
 
-/** Sigla canônica (glossário). Uso em chips, títulos curtos e códigos. */
-const docTypeLabels: Record<DocType, string> = {
-  dfd: 'DFD',
-  etp: 'ETP',
-  tr: 'TR',
-}
-
-/** Nome por extenso canônico (glossário). Uso em cabeçalhos e artefato oficial. */
-const docTypeFullLabels: Record<DocType, string> = {
-  dfd: 'Documento de Formalização da Demanda',
-  etp: 'Estudo Técnico Preliminar',
-  tr: 'Termo de Referência',
-}
-
+/** Sigla canônica (glossário); cai no próprio id se o tipo não existir. */
 export function docTypeLabel(type: DocType): string {
-  return docTypeLabels[type]
+  return getDocumentType(type)?.sigla ?? type
 }
 
+/** Nome por extenso canônico (glossário); cai no próprio id se não existir. */
 export function docTypeFullLabel(type: DocType): string {
-  return docTypeFullLabels[type]
+  return getDocumentType(type)?.nome ?? type
 }
 
 /**
  * Tipo do documento ancestral (pai) na cadeia: o ETP herda do DFD e o TR herda
- * do ETP. Modela explicitamente a relação `parentId` da cadeia em memória; a
- * herança sobe por esta relação ate achar um ancestral com valor.
+ * do ETP. Lido do registry (`parentTypeId`); `null` para o DFD, raiz da cadeia,
+ * e para tipos livres/standalone.
  */
-const parentByType: Record<DocType, DocType | null> = {
-  dfd: null,
-  etp: 'dfd',
-  tr: 'etp',
-}
-
-/** Tipo ancestral imediato na cadeia, ou `null` para o documento inicial (DFD). */
 export function parentOf(type: DocType): DocType | null {
-  return parentByType[type]
+  return getDocumentType(type)?.parentTypeId ?? null
 }
