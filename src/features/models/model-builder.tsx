@@ -45,8 +45,13 @@ import {
 import { Separator } from '@/shared/ui/separator'
 import { Switch } from '@/shared/ui/switch'
 import { Textarea } from '@/shared/ui/textarea'
+import {
+  describeFormula,
+  isFormulaWellFormed,
+} from '@/features/documents/data/calc'
 import { docTypeLabel } from '@/features/documents/data/doc-type'
 import {
+  type CalcToken,
   type FieldDefinition,
   type FieldInputType,
   type ModelDefinition,
@@ -63,6 +68,7 @@ const inputTypeLabels: Record<FieldInputType, string> = {
   email: 'E-mail',
   number: 'Número',
   currency: 'Moeda (R$)',
+  calculated: 'Calculado',
   itemsTable: 'Tabela de itens',
 }
 
@@ -74,6 +80,7 @@ const inputTypeOrder: FieldInputType[] = [
   'email',
   'number',
   'currency',
+  'calculated',
   'itemsTable',
 ]
 
@@ -226,6 +233,151 @@ function OptionsEditor({
   )
 }
 
+/**
+ * Editor de fórmula de um campo calculado: monta uma lista de tokens (campos +
+ * operadores + parênteses) escolhendo no Select e nos botões. Avaliação é
+ * derivada no preenchimento; aqui só montamos/validamos a estrutura. Só campos
+ * numéricos/moeda/calculados (exceto o próprio) podem entrar.
+ */
+function FormulaEditor({
+  modelId,
+  field,
+}: {
+  modelId: string
+  field: FieldDefinition
+}) {
+  const updateField = useModelsStore((state) => state.updateField)
+  const model = useModelsStore((state) =>
+    state.models.find((item) => item.id === modelId)
+  )
+  const formula = field.formula ?? []
+  const candidates = model
+    ? Object.values(model.fields).filter(
+        (item) =>
+          item.id !== field.id &&
+          (item.input === 'number' ||
+            item.input === 'currency' ||
+            item.input === 'calculated')
+      )
+    : []
+
+  const setFormula = (next: CalcToken[]) =>
+    updateField(modelId, field.id, { formula: next })
+  const append = (token: CalcToken) => setFormula([...formula, token])
+
+  const readable = model ? describeFormula(formula, model) : ''
+  const wellFormed = isFormulaWellFormed(formula)
+  const operators: Array<{ op: '+' | '-' | '*' | '/'; symbol: string }> = [
+    { op: '+', symbol: '+' },
+    { op: '-', symbol: '−' },
+    { op: '*', symbol: '×' },
+    { op: '/', symbol: '÷' },
+  ]
+
+  return (
+    <Field>
+      <FieldLabel>Fórmula</FieldLabel>
+      {candidates.length === 0 ? (
+        <p className='text-sm text-muted-foreground'>
+          Crie campos do tipo Número ou Moeda neste modelo para compor o
+          cálculo.
+        </p>
+      ) : (
+        <>
+          <div className='flex min-h-9 flex-wrap items-center gap-1.5 rounded-xl border bg-muted/20 px-3 py-2'>
+            {formula.length ? (
+              <span className='text-sm'>{readable}</span>
+            ) : (
+              <span className='text-sm text-muted-foreground'>
+                Monte a fórmula com os campos e operadores abaixo.
+              </span>
+            )}
+          </div>
+          <div className='flex flex-wrap items-center gap-2'>
+            <Select
+              value=''
+              onValueChange={(fieldId) => append({ kind: 'field', fieldId })}
+            >
+              <SelectTrigger
+                className='w-auto min-w-44'
+                aria-label='Adicionar campo à fórmula'
+              >
+                <SelectValue placeholder='Adicionar campo' />
+              </SelectTrigger>
+              <SelectContent>
+                {candidates.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.label || 'Sem rótulo'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {operators.map(({ op, symbol }) => (
+              <Button
+                key={op}
+                type='button'
+                variant='outline'
+                size='icon'
+                aria-label={`Operador ${symbol}`}
+                onClick={() => append({ kind: 'op', op })}
+              >
+                {symbol}
+              </Button>
+            ))}
+            <Button
+              type='button'
+              variant='outline'
+              size='icon'
+              aria-label='Abre parêntese'
+              onClick={() => append({ kind: 'paren', paren: '(' })}
+            >
+              (
+            </Button>
+            <Button
+              type='button'
+              variant='outline'
+              size='icon'
+              aria-label='Fecha parêntese'
+              onClick={() => append({ kind: 'paren', paren: ')' })}
+            >
+              )
+            </Button>
+            <Button
+              type='button'
+              variant='ghost'
+              size='sm'
+              className='text-muted-foreground'
+              disabled={formula.length === 0}
+              onClick={() => setFormula(formula.slice(0, -1))}
+            >
+              Remover último
+            </Button>
+            <Button
+              type='button'
+              variant='ghost'
+              size='sm'
+              className='text-muted-foreground hover:text-destructive'
+              disabled={formula.length === 0}
+              onClick={() => setFormula([])}
+            >
+              Limpar
+            </Button>
+          </div>
+          {formula.length > 0 && !wellFormed ? (
+            <FieldError>
+              Fórmula incompleta ou inválida. Verifique operadores e parênteses.
+            </FieldError>
+          ) : null}
+        </>
+      )}
+      <FieldDescription>
+        Resultado calculado automaticamente a partir de outros campos numéricos.
+        Operadores: + − × ÷ e parênteses.
+      </FieldDescription>
+    </Field>
+  )
+}
+
 function FieldEditor({
   modelId,
   sectionId,
@@ -305,6 +457,10 @@ function FieldEditor({
 
       {field.input === 'select' ? (
         <OptionsEditor modelId={modelId} field={field} />
+      ) : null}
+
+      {field.input === 'calculated' ? (
+        <FormulaEditor modelId={modelId} field={field} />
       ) : null}
 
       <div className='flex flex-wrap items-center justify-between gap-4'>

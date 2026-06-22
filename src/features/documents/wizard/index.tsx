@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { Textarea } from '@/shared/ui/textarea'
+import { formatCalculated } from '@/features/documents/data/calc'
 import {
   canStartChildOf,
   nextChildTypeOf,
@@ -527,6 +528,10 @@ function FieldSection({
 
   if (!fields.length) return null
 
+  // Dados planos do documento corrente: base para os campos calculados (que
+  // derivam o valor das outras células, reativo a cada edição).
+  const documentData = cellsToDocumentData(cells)
+
   return (
     <section className='space-y-4'>
       <div>
@@ -551,6 +556,11 @@ function FieldSection({
               readOnly={readOnly}
               docType={docType}
               sectionId={section.id}
+              computed={
+                field.input === 'calculated'
+                  ? formatCalculated(field, model, documentData)
+                  : undefined
+              }
               className={
                 field.input === 'textarea' || field.input === 'itemsTable'
                   ? 'md:col-span-2'
@@ -574,6 +584,7 @@ function FieldRow({
   readOnly,
   docType,
   className,
+  computed,
   onChange,
   onRevert,
   onFocus,
@@ -585,6 +596,7 @@ function FieldRow({
   docType: DocType
   sectionId: string
   className?: string
+  computed?: string
   onChange: (value: string) => void
   onRevert: () => void
   onFocus: () => void
@@ -673,7 +685,16 @@ function FieldRow({
         ) : null}
       </div>
 
-      {field.input === 'itemsTable' ? (
+      {field.input === 'calculated' ? (
+        <div
+          data-field-id={field.id}
+          tabIndex={-1}
+          aria-readonly='true'
+          className='flex min-h-9 items-center rounded-xl border border-dashed border-border bg-muted/30 px-3 py-2 text-sm font-medium tabular-nums'
+        >
+          {computed ?? '—'}
+        </div>
+      ) : field.input === 'itemsTable' ? (
         <TRItemsTable
           value={cell.value}
           onChange={(next) => onChange(next)}
@@ -808,6 +829,7 @@ function validateDocument(
 ): StepErrors {
   const nextErrors: StepErrors = {}
   Object.values(model.fields).forEach((field) => {
+    if (field.input === 'calculated') return // derivado, não preenchido
     if (!field.required) return
     const value = String(documentData[field.id] ?? '').trim()
     if (!value) {

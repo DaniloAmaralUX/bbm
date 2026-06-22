@@ -58,6 +58,13 @@ function PreviewControl({ field }: { field: FieldDefinition }) {
       </div>
     )
   }
+  if (field.input === 'calculated') {
+    return (
+      <div className='rounded-2xl border border-dashed px-4 py-3 text-sm text-muted-foreground'>
+        Valor calculado automaticamente a partir de outros campos.
+      </div>
+    )
+  }
   if (field.input === 'number' || field.input === 'currency') {
     const isCurrency = field.input === 'currency'
     return (
