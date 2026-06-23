@@ -3,7 +3,11 @@ import {
   canStartChildOf,
   nextChildTypeOf,
 } from '@/features/documents/data/chain'
-import { type DocType, chainTypesOf } from '@/features/documents/data/doc-type'
+import {
+  type DocType,
+  chainTypesOf,
+  isChainRootType,
+} from '@/features/documents/data/doc-type'
 import {
   type ChainState,
   type DocumentCells,
@@ -29,8 +33,10 @@ import {
   createInitialAssistantState,
   generateAssistantSuggestion,
 } from '@/features/documents/data/tr-assistant'
+import { getDocTypeById } from '@/features/documents/store/use-doc-types-store'
 import {
   createInitialTRWizardData,
+  createWizardDataForType,
   type TRWizardContext,
   type TRWizardData,
 } from '../types'
@@ -58,6 +64,8 @@ type TRWizardState = TRWizardData & {
   /** Inicia o documento dependente a partir de um pai concluido da cadeia. */
   seedChainFromParent: (parent: TRItem) => void
   reset: () => void
+  /** Reinicia o wizard para um documento de um tipo especifico (normalizado). */
+  resetWithType: (tipo: DocType) => void
   /** Celulas do documento corrente. */
   currentCells: () => DocumentCells
   /** `DocumentData` plano do documento corrente (para IA e validacao). */
@@ -71,6 +79,17 @@ function contextForChain(
 ): TRWizardContext {
   if (context.docType === chain.current) return context
   return { ...context, docType: chain.current }
+}
+
+/**
+ * Normaliza o tipo pedido (ex.: via `?tipo=`) para um tipo iniciavel: id
+ * inexistente ou tipo no meio de uma cadeia (ETP/TR) cai no DFD (fluxo de cadeia
+ * padrao); tipo avulso ou raiz de cadeia e mantido como esta.
+ */
+function normalizeWizardType(raw: DocType): DocType {
+  if (!getDocTypeById(raw)) return 'dfd'
+  if (chainTypesOf(raw).length > 1 && !isChainRootType(raw)) return 'dfd'
+  return raw
 }
 
 export const useTRWizard = create<TRWizardState>()((set, get) => ({
@@ -335,6 +354,11 @@ export const useTRWizard = create<TRWizardState>()((set, get) => ({
   reset: () =>
     set({
       ...createInitialTRWizardData(),
+      assistant: createInitialAssistantState(),
+    }),
+  resetWithType: (tipo) =>
+    set({
+      ...createWizardDataForType(normalizeWizardType(tipo)),
       assistant: createInitialAssistantState(),
     }),
   currentCells: () => {

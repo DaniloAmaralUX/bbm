@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { FilePlus2, FolderOpen } from 'lucide-react'
+import { FolderOpen } from 'lucide-react'
 import { Header } from '@/shared/layout/header'
 import { HeaderActions } from '@/shared/layout/header-actions'
 import { Main } from '@/shared/layout/main'
@@ -11,6 +11,7 @@ import {
   CardHeader,
 } from '@/shared/ui/card'
 import { SectionLabel } from '@/shared/components/section-label'
+import { NewDocumentMenu } from '@/features/documents/components/new-document-menu'
 import {
   recentTrs,
   trChainFunnel,
@@ -42,12 +43,7 @@ export function TRDashboard() {
             </p>
           </div>
           <div className='flex flex-wrap gap-2'>
-            <Button asChild className='rounded-xl'>
-              <Link to='/documentos/novo'>
-                <FilePlus2 aria-hidden='true' className='size-4' />
-                Novo documento
-              </Link>
-            </Button>
+            <NewDocumentMenu />
             <Button asChild variant='outline' className='rounded-xl'>
               <Link to='/documentos'>
                 <FolderOpen aria-hidden='true' className='size-4' />

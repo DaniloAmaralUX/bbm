@@ -62,6 +62,9 @@ function buildCrumbs(pathname: string, ctx: Resolvers): Crumb[] {
       ]
     }
 
+    case 'tipos':
+      return [{ label: 'Tipos de documento' }]
+
     default:
       return [{ label: head.charAt(0).toUpperCase() + head.slice(1) }]
   }

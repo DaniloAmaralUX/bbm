@@ -3,6 +3,7 @@ import {
   FileText,
   LayoutDashboard,
   LayoutTemplate,
+  Shapes,
 } from 'lucide-react'
 import { appIdentity, currentUser } from '@/features/documents/data/app'
 import { type SidebarData } from '../types'
@@ -32,6 +33,12 @@ export const sidebarData: SidebarData = {
           title: 'Modelos',
           url: '/modelos',
           icon: LayoutTemplate,
+          roles: ['sustentacao'],
+        },
+        {
+          title: 'Tipos de documento',
+          url: '/tipos',
+          icon: Shapes,
           roles: ['sustentacao'],
         },
         {

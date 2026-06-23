@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Check,
   CheckCircle2,
+  CircleAlert,
   ClipboardList,
   Link2,
   Loader2,
@@ -81,11 +82,13 @@ type StepErrors = Record<string, string>
 type TRWizardPageProps = {
   duplicateFrom?: string
   parentId?: string
+  tipo?: string
 }
 
 export function TRWizardPage({
   duplicateFrom,
   parentId,
+  tipo,
 }: TRWizardPageProps = {}) {
   const chain = useTRWizard((state) => state.chain)
   const context = useTRWizard((state) => state.context)
@@ -99,6 +102,8 @@ export function TRWizardPage({
   const setAssistantTarget = useTRWizard((state) => state.setAssistantTarget)
   const seedFromDuplicate = useTRWizard((state) => state.seedFromDuplicate)
   const seedChainFromParent = useTRWizard((state) => state.seedChainFromParent)
+  const reset = useTRWizard((state) => state.reset)
+  const resetWithType = useTRWizard((state) => state.resetWithType)
 
   const current = chain.current
   const isDone = chain.done[current]
@@ -115,6 +120,12 @@ export function TRWizardPage({
       ),
     [allModels, current]
   )
+  // Documento avulso (tipo fora de cadeia): sem stepper nem herança.
+  const isSingleDoc = useMemo(
+    () => chainTypesOf(current).length === 1,
+    [current]
+  )
+  const hasPublishedModel = publishedOfType.length > 0
 
   const reviewState = useMemo(
     () =>
@@ -180,16 +191,23 @@ export function TRWizardPage({
     )
   }, [parentId, seedChainFromParent])
 
-  // Reflete o documento corrente na URL (?tipo=) para deep-link/refresh.
+  // Inicia um documento do tipo escolhido (?tipo=) ou garante a cadeia DFD limpa
+  // quando se entra sem tipo — corrige o vazamento do estado anterior (o store
+  // do wizard e singleton e nao remonta a cada mudanca de search). Duplicate e
+  // parentId (efeitos acima) tem precedencia. O ref guarda o ultimo tipo
+  // aplicado para reagir a navegacao na mesma rota sem reprocessar a cada passo.
+  const appliedEntryRef = useRef<string | null>(null)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    params.set('tipo', current)
-    window.history.replaceState(
-      null,
-      '',
-      `${window.location.pathname}?${params.toString()}`
-    )
-  }, [current])
+    if (duplicateFrom || parentId) return
+    const key = tipo ?? ''
+    if (appliedEntryRef.current === key) return
+    appliedEntryRef.current = key
+    if (tipo !== undefined) {
+      resetWithType(tipo)
+    } else if (current !== 'dfd') {
+      reset()
+    }
+  }, [tipo, duplicateFrom, parentId, current, reset, resetWithType])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -248,6 +266,12 @@ export function TRWizardPage({
   }
 
   const handleConclude = () => {
+    if (!hasPublishedModel) {
+      toast.error(
+        `Publique um modelo de ${docTypeLabel(current)} antes de concluir.`
+      )
+      return
+    }
     const nextErrors = validateDocument(documentData, model)
     setErrorState({ doc: current, values: nextErrors })
     const firstError = Object.keys(nextErrors)[0]
@@ -289,11 +313,14 @@ export function TRWizardPage({
             </div>
             <div className='min-w-0'>
               <h1 className='text-base font-semibold tracking-tight text-balance'>
-                Cadeia da fase preparatória
+                {isSingleDoc
+                  ? docTypeFullLabel(current)
+                  : 'Cadeia da fase preparatória'}
               </h1>
               <p className='line-clamp-2 text-xs text-pretty text-muted-foreground'>
-                Um motor para os três documentos. Os campos comuns fluem do DFD
-                para o ETP e o TR por herança.
+                {isSingleDoc
+                  ? 'Documento avulso, sem herança de cadeia.'
+                  : 'Um motor para os três documentos. Os campos comuns fluem do DFD para o ETP e o TR por herança.'}
               </p>
             </div>
           </div>
@@ -318,14 +345,33 @@ export function TRWizardPage({
           </div>
         </section>
 
-        <TRStepper
-          current={current}
-          done={chain.done}
-          locked={lockedMap}
-          onSelect={goToDoc}
-        />
+        {isSingleDoc ? null : (
+          <TRStepper
+            current={current}
+            done={chain.done}
+            locked={lockedMap}
+            onSelect={goToDoc}
+          />
+        )}
 
-        <div className='grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]'>
+        {hasPublishedModel ? null : (
+          <Alert>
+            <CircleAlert />
+            <AlertTitle>Sem modelo publicado</AlertTitle>
+            <AlertDescription>
+              Publique um modelo de{' '}
+              <span translate='no'>{docTypeLabel(current)}</span> para concluir
+              este documento.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div
+          className={cn(
+            'grid gap-6',
+            !isSingleDoc && 'lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]'
+          )}
+        >
           <div className='space-y-6'>
             <Card className='rounded-3xl border-0 shadow-border'>
               <CardHeader>
@@ -408,9 +454,11 @@ export function TRWizardPage({
             {!isDone ? <TRAIAssistant /> : null}
           </div>
 
-          <aside aria-label='Herança do documento' className='space-y-6'>
-            <TRLineagePanel docType={current} cells={cells} model={model} />
-          </aside>
+          {isSingleDoc ? null : (
+            <aside aria-label='Herança do documento' className='space-y-6'>
+              <TRLineagePanel docType={current} cells={cells} model={model} />
+            </aside>
+          )}
         </div>
 
         <div className='sticky bottom-4 z-30 [touch-action:manipulation]'>

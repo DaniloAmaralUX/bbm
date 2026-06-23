@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedTiposIndexRouteImport } from './routes/_authenticated/tipos.index'
 import { Route as AuthenticatedModelosIndexRouteImport } from './routes/_authenticated/modelos.index'
 import { Route as AuthenticatedDocumentosIndexRouteImport } from './routes/_authenticated/documentos.index'
 import { Route as AuthenticatedModelosModelIdRouteImport } from './routes/_authenticated/modelos.$modelId'
@@ -30,6 +31,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTiposIndexRoute = AuthenticatedTiposIndexRouteImport.update({
+  id: '/tipos/',
+  path: '/tipos/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedModelosIndexRoute =
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/modelos/$modelId': typeof AuthenticatedModelosModelIdRoute
   '/documentos/': typeof AuthenticatedDocumentosIndexRoute
   '/modelos/': typeof AuthenticatedModelosIndexRoute
+  '/tipos/': typeof AuthenticatedTiposIndexRoute
 }
 export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/modelos/$modelId': typeof AuthenticatedModelosModelIdRoute
   '/documentos': typeof AuthenticatedDocumentosIndexRoute
   '/modelos': typeof AuthenticatedModelosIndexRoute
+  '/tipos': typeof AuthenticatedTiposIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/_authenticated/modelos/$modelId': typeof AuthenticatedModelosModelIdRoute
   '/_authenticated/documentos/': typeof AuthenticatedDocumentosIndexRoute
   '/_authenticated/modelos/': typeof AuthenticatedModelosIndexRoute
+  '/_authenticated/tipos/': typeof AuthenticatedTiposIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -102,6 +111,7 @@ export interface FileRouteTypes {
     | '/modelos/$modelId'
     | '/documentos/'
     | '/modelos/'
+    | '/tipos/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/dashboard'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/modelos/$modelId'
     | '/documentos'
     | '/modelos'
+    | '/tipos'
   id:
     | '__root__'
     | '/_authenticated'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/_authenticated/modelos/$modelId'
     | '/_authenticated/documentos/'
     | '/_authenticated/modelos/'
+    | '/_authenticated/tipos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -148,6 +160,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tipos/': {
+      id: '/_authenticated/tipos/'
+      path: '/tipos'
+      fullPath: '/tipos/'
+      preLoaderRoute: typeof AuthenticatedTiposIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/modelos/': {
@@ -196,6 +215,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModelosModelIdRoute: typeof AuthenticatedModelosModelIdRoute
   AuthenticatedDocumentosIndexRoute: typeof AuthenticatedDocumentosIndexRoute
   AuthenticatedModelosIndexRoute: typeof AuthenticatedModelosIndexRoute
+  AuthenticatedTiposIndexRoute: typeof AuthenticatedTiposIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -207,6 +227,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModelosModelIdRoute: AuthenticatedModelosModelIdRoute,
   AuthenticatedDocumentosIndexRoute: AuthenticatedDocumentosIndexRoute,
   AuthenticatedModelosIndexRoute: AuthenticatedModelosIndexRoute,
+  AuthenticatedTiposIndexRoute: AuthenticatedTiposIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
