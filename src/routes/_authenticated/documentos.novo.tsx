@@ -7,15 +7,17 @@ export const Route = createFileRoute('/_authenticated/documentos/novo')({
   validateSearch: z.object({
     duplicate: z.string().optional().catch(undefined),
     parentId: z.string().optional().catch(undefined),
+    // Tipo de documento a iniciar (id do registry). Ausente = cadeia DFD padrao.
+    tipo: z.string().optional().catch(undefined),
   }),
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  const { duplicate, parentId } = Route.useSearch()
+  const { duplicate, parentId, tipo } = Route.useSearch()
   return (
     <RoleGuard allow='requisitante'>
-      <TRWizardPage duplicateFrom={duplicate} parentId={parentId} />
+      <TRWizardPage duplicateFrom={duplicate} parentId={parentId} tipo={tipo} />
     </RoleGuard>
   )
 }

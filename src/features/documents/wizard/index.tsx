@@ -81,11 +81,13 @@ type StepErrors = Record<string, string>
 type TRWizardPageProps = {
   duplicateFrom?: string
   parentId?: string
+  tipo?: string
 }
 
 export function TRWizardPage({
   duplicateFrom,
   parentId,
+  tipo,
 }: TRWizardPageProps = {}) {
   const chain = useTRWizard((state) => state.chain)
   const context = useTRWizard((state) => state.context)
@@ -99,6 +101,8 @@ export function TRWizardPage({
   const setAssistantTarget = useTRWizard((state) => state.setAssistantTarget)
   const seedFromDuplicate = useTRWizard((state) => state.seedFromDuplicate)
   const seedChainFromParent = useTRWizard((state) => state.seedChainFromParent)
+  const reset = useTRWizard((state) => state.reset)
+  const resetWithType = useTRWizard((state) => state.resetWithType)
 
   const current = chain.current
   const isDone = chain.done[current]
@@ -180,16 +184,23 @@ export function TRWizardPage({
     )
   }, [parentId, seedChainFromParent])
 
-  // Reflete o documento corrente na URL (?tipo=) para deep-link/refresh.
+  // Inicia um documento do tipo escolhido (?tipo=) ou garante a cadeia DFD limpa
+  // quando se entra sem tipo — corrige o vazamento do estado anterior (o store
+  // do wizard e singleton e nao remonta a cada mudanca de search). Duplicate e
+  // parentId (efeitos acima) tem precedencia. O ref guarda o ultimo tipo
+  // aplicado para reagir a navegacao na mesma rota sem reprocessar a cada passo.
+  const appliedEntryRef = useRef<string | null>(null)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    params.set('tipo', current)
-    window.history.replaceState(
-      null,
-      '',
-      `${window.location.pathname}?${params.toString()}`
-    )
-  }, [current])
+    if (duplicateFrom || parentId) return
+    const key = tipo ?? ''
+    if (appliedEntryRef.current === key) return
+    appliedEntryRef.current = key
+    if (tipo !== undefined) {
+      resetWithType(tipo)
+    } else if (current !== 'dfd') {
+      reset()
+    }
+  }, [tipo, duplicateFrom, parentId, current, reset, resetWithType])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
