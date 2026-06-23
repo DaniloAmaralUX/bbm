@@ -88,3 +88,28 @@ export function allDocTypes(): DocType[] {
 export function isChainRootType(type: DocType): boolean {
   return parentOf(type) === null && chainTypesOf(type).length > 1
 }
+
+/**
+ * `ancestorId` e ancestral de `typeId` subindo por `parentTypeId`? Guarda contra
+ * ciclos (Set de visitados). Usado para validar a escolha de pai de um tipo.
+ */
+export function isAncestorType(ancestorId: DocType, typeId: DocType): boolean {
+  let current = parentOf(typeId)
+  const seen = new Set<string>([typeId])
+  while (current && !seen.has(current)) {
+    if (current === ancestorId) return true
+    seen.add(current)
+    current = parentOf(current)
+  }
+  return false
+}
+
+/**
+ * `parentId` pode ser o pai de `childId` sem criar ciclo? Falso para o proprio
+ * tipo ou quando `parentId` ja e descendente de `childId`. Usado pela tela de
+ * tipos para filtrar as opcoes de "Segue de".
+ */
+export function canBeParent(childId: DocType, parentId: DocType): boolean {
+  if (childId === parentId) return false
+  return !isAncestorType(childId, parentId)
+}
