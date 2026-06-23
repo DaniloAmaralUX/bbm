@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronUp,
   Eye,
+  Link2,
   Pencil,
   Plus,
   Send,
@@ -49,7 +50,7 @@ import {
   describeFormula,
   isFormulaWellFormed,
 } from '@/features/documents/data/calc'
-import { docTypeLabel } from '@/features/documents/data/doc-type'
+import { docTypeLabel, parentOf } from '@/features/documents/data/doc-type'
 import {
   DEFAULT_ITEM_COLUMNS,
   type CalcToken,
@@ -802,6 +803,9 @@ export function ModelBuilderPage({ modelId }: { modelId: string }) {
   const addSection = useModelsStore((state) => state.addSection)
   const publishModel = useModelsStore((state) => state.publishModel)
   const unpublishModel = useModelsStore((state) => state.unpublishModel)
+  const importInheritableFields = useModelsStore(
+    (state) => state.importInheritableFields
+  )
   const navigate = useNavigate()
   const [mode, setMode] = useState<'edit' | 'preview'>('edit')
   const [confirmUnpublish, setConfirmUnpublish] = useState(false)
@@ -826,6 +830,8 @@ export function ModelBuilderPage({ modelId }: { modelId: string }) {
       </>
     )
   }
+
+  const parentTypeId = parentOf(model.docType)
 
   return (
     <>
@@ -947,6 +953,26 @@ export function ModelBuilderPage({ modelId }: { modelId: string }) {
               ))}
 
             <div className='flex flex-wrap gap-2'>
+              {parentTypeId ? (
+                <Button
+                  variant='outline'
+                  className='rounded-xl'
+                  onClick={() => {
+                    const count = importInheritableFields(
+                      model.id,
+                      parentTypeId
+                    )
+                    toast.success(
+                      count > 0
+                        ? `${count} campo(s) herdado(s) de ${docTypeLabel(parentTypeId)}.`
+                        : `Nenhum campo novo a herdar de ${docTypeLabel(parentTypeId)}.`
+                    )
+                  }}
+                >
+                  <Link2 aria-hidden='true' className='size-4' />
+                  Herdar campos de {docTypeLabel(parentTypeId)}
+                </Button>
+              ) : null}
               <Button
                 variant='outline'
                 className='rounded-xl'

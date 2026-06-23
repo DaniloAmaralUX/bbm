@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import {
   type DocType,
   docTypeFullLabel,
+  docTypeLabel,
 } from '@/features/documents/data/doc-type'
 import {
   type FieldDefinition,
@@ -44,6 +45,12 @@ type ModelsState = {
   publishModel: (id: string) => void
   /** Volta o modelo para rascunho (a cadeia deixa de usa-lo). */
   unpublishModel: (id: string) => void
+  /**
+   * Importa para o modelo os campos herdaveis do modelo publicado do tipo pai,
+   * preservando o id (a heranca casa por id de campo). Retorna quantos campos
+   * foram importados (0 se nenhum novo).
+   */
+  importInheritableFields: (modelId: string, parentDocType: DocType) => number
 }
 
 function newId(prefix: string): string {
@@ -69,7 +76,7 @@ function patchModel(
   )
 }
 
-export const useModelsStore = create<ModelsState>()((set) => ({
+export const useModelsStore = create<ModelsState>()((set, get) => ({
   models: standardModels,
 
   createDraftModel: (docType) => {
@@ -218,6 +225,55 @@ export const useModelsStore = create<ModelsState>()((set) => ({
         state: 'draft',
       })),
     })),
+
+  importInheritableFields: (modelId, parentDocType) => {
+    const model = get().models.find((item) => item.id === modelId)
+    if (!model) return 0
+    const parent = getModelForDocType(parentDocType)
+    const existingIds = new Set(Object.keys(model.fields))
+    const toAdd = Object.values(parent.fields).filter(
+      (field) => field.inheritable && !existingIds.has(field.id)
+    )
+    if (toAdd.length === 0) return 0
+    set((state) => ({
+      models: patchModel(state.models, modelId, (current) => {
+        const fields = { ...current.fields }
+        for (const field of toAdd) {
+          fields[field.id] = { ...field, inheritable: true }
+        }
+        const sectionTitle = `Herdados de ${docTypeLabel(parentDocType)}`
+        const target = current.sections.find(
+          (section) =>
+            section.kind === 'fields' && section.title === sectionTitle
+        )
+        const sections: SectionDefinition[] = target
+          ? current.sections.map((section) =>
+              section.id === target.id
+                ? {
+                    ...section,
+                    fieldIds: [
+                      ...(section.fieldIds ?? []),
+                      ...toAdd.map((field) => field.id),
+                    ],
+                  }
+                : section
+            )
+          : [
+              {
+                id: newId('section'),
+                title: sectionTitle,
+                description:
+                  'Campos que fluem do documento anterior por herança.',
+                kind: 'fields',
+                fieldIds: toAdd.map((field) => field.id),
+              },
+              ...current.sections,
+            ]
+        return { ...current, fields, sections }
+      }),
+    }))
+    return toAdd.length
+  },
 }))
 
 // --- Seletores puros (funcionam fora do React via getState) ---
