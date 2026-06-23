@@ -1,17 +1,12 @@
-import { Link } from '@tanstack/react-router'
-import { Download, FilePlus2 } from 'lucide-react'
+import { Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/ui/button'
+import { NewDocumentMenu } from '@/features/documents/components/new-document-menu'
 
 export function TRsPrimaryButtons() {
   return (
     <div className='flex flex-wrap gap-2'>
-      <Button asChild className='rounded-xl'>
-        <Link to='/documentos/novo'>
-          <FilePlus2 aria-hidden='true' className='size-4' />
-          Novo documento
-        </Link>
-      </Button>
+      <NewDocumentMenu />
       <Button
         variant='outline'
         className='rounded-xl'
