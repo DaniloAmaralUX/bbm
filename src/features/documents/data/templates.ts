@@ -666,7 +666,12 @@ const contratoModel: ModelDefinition = {
   state: 'published',
   version: 1,
   updatedAt: '2026-06-20',
-  fields: {
+  // Os comuns (object/requestingUnit/responsible) reusam `commonFields` (mesmos
+  // ids) e sao marcados `inheritable` por markInheritableFields => fluem do TR.
+  fields: markInheritableFields({
+    object: commonFields.object,
+    requestingUnit: commonFields.requestingUnit,
+    responsible: commonFields.responsible,
     contratante: {
       id: 'contratante',
       label: 'Contratante',
@@ -689,14 +694,6 @@ const contratoModel: ModelDefinition = {
       input: 'text',
       required: true,
       placeholder: '00.000.000/0000-00',
-      autocomplete: 'off',
-    },
-    objeto: {
-      id: 'objeto',
-      label: 'Objeto do contrato',
-      input: 'textarea',
-      required: true,
-      placeholder: 'Descrição do objeto contratado…',
       autocomplete: 'off',
     },
     modalidade: {
@@ -737,28 +734,29 @@ const contratoModel: ModelDefinition = {
         { kind: 'field', fieldId: 'prazo' },
       ],
     },
-  },
+  }),
   sections: [
+    {
+      id: 'herdadosTr',
+      title: 'Herdados do TR',
+      description:
+        'Objeto, unidade e responsável fluem do Termo de Referência.',
+      kind: 'fields',
+      fieldIds: ['object', 'requestingUnit', 'responsible'],
+    },
     {
       id: 'partes',
       title: '1. Partes',
-      description: 'Contratante, contratada e CNPJ.',
+      description: 'Contratante, contratada, CNPJ e modalidade.',
       kind: 'fields',
-      fieldIds: ['contratante', 'contratada', 'cnpj'],
+      fieldIds: ['contratante', 'contratada', 'cnpj', 'modalidade'],
     },
     {
-      id: 'objetoSection',
-      title: '2. Objeto e vigência',
-      description: 'Objeto, modalidade, início e prazo.',
+      id: 'vigencia',
+      title: '2. Vigência e valores',
+      description: 'Início, prazo, valor mensal e total (calculado).',
       kind: 'fields',
-      fieldIds: ['objeto', 'modalidade', 'dataInicio', 'prazo'],
-    },
-    {
-      id: 'valores',
-      title: '3. Valores',
-      description: 'Valor mensal e total do contrato (calculado).',
-      kind: 'fields',
-      fieldIds: ['valorMensal', 'valorTotal'],
+      fieldIds: ['dataInicio', 'prazo', 'valorMensal', 'valorTotal'],
     },
     {
       id: 'review',

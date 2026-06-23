@@ -99,6 +99,20 @@ export const trs: TRItem[] = [
     summary:
       'Especificação dos serviços de engenharia, com etapas, medição e critérios de aceite para a reforma da UBS.',
   },
+  {
+    id: 'TC-2026-040',
+    docType: 'contrato',
+    parentId: 'TR-2026-040',
+    title: 'Termo de contrato da reforma da UBS Central',
+    unit: 'Secretaria de Saúde',
+    owner: 'Patrícia Gomes',
+    status: 'approved',
+    nature: 'servico',
+    updatedAt: '2026-04-18',
+    currentStep: 'Concluído',
+    summary:
+      'Contrato de execução da reforma e ampliação da UBS Central, com vigência e cronograma de medição.',
+  },
 
   // --- Cadeia completa e concluída: laboratórios de informática das escolas ---
   {

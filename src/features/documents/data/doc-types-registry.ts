@@ -70,7 +70,8 @@ export const seedDocumentTypes: DocumentType[] = [
     id: 'contrato',
     sigla: 'TC',
     nome: 'Termo de Contrato',
-    parentTypeId: null,
+    // Demo de cadeia custom: o contrato SEGUE o TR (estende a cadeia-semente).
+    parentTypeId: 'tr',
     order: 4,
     seed: false,
   },
