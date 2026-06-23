@@ -53,4 +53,25 @@ export const seedDocumentTypes: DocumentType[] = [
     order: 2,
     seed: true,
   },
+  // --- Tipos de DEMO (carga inicial editável) ---------------------------------
+  // Tipos avulsos pré-carregados (seed:false => editáveis/removíveis) para
+  // demonstrar a criação de modelos de QUALQUER tipo, além da cadeia DFD/ETP/TR.
+  // Cada um tem um modelo publicado em templates.ts, então já nasce "pronto para
+  // uso". Remover este bloco (e os modelos demo) deixa só a cadeia-semente.
+  {
+    id: 'laudo',
+    sigla: 'LT',
+    nome: 'Laudo Técnico',
+    parentTypeId: null,
+    order: 3,
+    seed: false,
+  },
+  {
+    id: 'contrato',
+    sigla: 'TC',
+    nome: 'Termo de Contrato',
+    parentTypeId: null,
+    order: 4,
+    seed: false,
+  },
 ]

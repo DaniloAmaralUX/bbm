@@ -518,6 +518,260 @@ const trModel: ModelDefinition = {
   ],
 }
 
+// --- Modelos de DEMO (publicados na carga inicial) --------------------------
+// Modelos completos e PUBLICADOS dos tipos de demonstração (laudo, contrato),
+// para mostrar os campos ricos fora da cadeia DFD/ETP/TR: seleção, data, moeda,
+// calculado e tabela de itens. Seedados junto dos padrão em `standardModels`.
+// Remover estes (e o bloco de tipos demo em doc-types-registry.ts) deixa só a
+// cadeia-semente.
+const laudoModel: ModelDefinition = {
+  id: 'model-laudo-demo',
+  docType: 'laudo',
+  name: 'Modelo padrão de Laudo Técnico',
+  label: docTypeFullLabel('laudo'),
+  intro:
+    'Avaliação técnica de bens ou serviços: identificação, parecer, itens avaliados e valoração.',
+  state: 'published',
+  version: 1,
+  updatedAt: '2026-06-20',
+  fields: {
+    unidade: {
+      id: 'unidade',
+      label: 'Unidade requisitante',
+      input: 'select',
+      required: true,
+      placeholder: 'Selecione a unidade',
+      options: unitOptions,
+    },
+    responsavel: {
+      id: 'responsavel',
+      label: 'Responsável técnico',
+      input: 'text',
+      required: true,
+      placeholder: 'Nome do responsável pela análise',
+      autocomplete: 'off',
+    },
+    dataVistoria: {
+      id: 'dataVistoria',
+      label: 'Data da vistoria',
+      input: 'date',
+      required: true,
+    },
+    objeto: {
+      id: 'objeto',
+      label: 'Objeto da análise',
+      input: 'textarea',
+      required: true,
+      placeholder: 'Bem, serviço ou situação avaliada…',
+      autocomplete: 'off',
+    },
+    classificacao: {
+      id: 'classificacao',
+      label: 'Classificação',
+      input: 'select',
+      required: true,
+      placeholder: 'Selecione a classificação',
+      options: [
+        { label: 'Conforme', value: 'conforme' },
+        { label: 'Conforme com ressalvas', value: 'conforme_ressalvas' },
+        { label: 'Não conforme', value: 'nao_conforme' },
+      ],
+    },
+    parecer: {
+      id: 'parecer',
+      label: 'Parecer técnico',
+      input: 'textarea',
+      required: true,
+      placeholder: 'Análise, fundamentação e conclusão técnica…',
+      autocomplete: 'off',
+    },
+    itens: {
+      id: 'itens',
+      label: 'Itens avaliados',
+      input: 'itemsTable',
+      required: true,
+      description: 'Itens, quantidades e valores de referência avaliados.',
+      columns: DEFAULT_ITEM_COLUMNS,
+      autocomplete: 'off',
+    },
+    valorBase: {
+      id: 'valorBase',
+      label: 'Valor base estimado',
+      input: 'currency',
+      required: true,
+      placeholder: 'R$ 0,00',
+    },
+    adicional: {
+      id: 'adicional',
+      label: 'Adicional técnico',
+      input: 'currency',
+      placeholder: 'R$ 0,00',
+    },
+    valorTotal: {
+      id: 'valorTotal',
+      label: 'Valor total estimado',
+      input: 'calculated',
+      formula: [
+        { kind: 'field', fieldId: 'valorBase' },
+        { kind: 'op', op: '+' },
+        { kind: 'field', fieldId: 'adicional' },
+      ],
+    },
+  },
+  sections: [
+    {
+      id: 'identificacao',
+      title: '1. Identificação',
+      description: 'Unidade, responsável técnico e data da vistoria.',
+      kind: 'fields',
+      fieldIds: ['unidade', 'responsavel', 'dataVistoria'],
+    },
+    {
+      id: 'analise',
+      title: '2. Análise',
+      description: 'Objeto, classificação e parecer técnico.',
+      kind: 'fields',
+      fieldIds: ['objeto', 'classificacao', 'parecer'],
+    },
+    {
+      id: 'itensSection',
+      title: '3. Itens avaliados',
+      description: 'Tabela de itens com valores de referência.',
+      kind: 'fields',
+      fieldIds: ['itens'],
+    },
+    {
+      id: 'valoracao',
+      title: '4. Valoração',
+      description: 'Valor base, adicional e total estimado (calculado).',
+      kind: 'fields',
+      fieldIds: ['valorBase', 'adicional', 'valorTotal'],
+    },
+    {
+      id: 'review',
+      title: 'Revisão final',
+      description: 'Valide a prévia consolidada antes de concluir o laudo.',
+      kind: 'review',
+    },
+  ],
+}
+
+const contratoModel: ModelDefinition = {
+  id: 'model-contrato-demo',
+  docType: 'contrato',
+  name: 'Modelo padrão de Termo de Contrato',
+  label: docTypeFullLabel('contrato'),
+  intro:
+    'Formaliza a contratação: partes, objeto, vigência, modalidade e valores.',
+  state: 'published',
+  version: 1,
+  updatedAt: '2026-06-20',
+  fields: {
+    contratante: {
+      id: 'contratante',
+      label: 'Contratante',
+      input: 'text',
+      required: true,
+      placeholder: 'Órgão ou entidade contratante',
+      autocomplete: 'off',
+    },
+    contratada: {
+      id: 'contratada',
+      label: 'Contratada',
+      input: 'text',
+      required: true,
+      placeholder: 'Razão social da contratada',
+      autocomplete: 'off',
+    },
+    cnpj: {
+      id: 'cnpj',
+      label: 'CNPJ da contratada',
+      input: 'text',
+      required: true,
+      placeholder: '00.000.000/0000-00',
+      autocomplete: 'off',
+    },
+    objeto: {
+      id: 'objeto',
+      label: 'Objeto do contrato',
+      input: 'textarea',
+      required: true,
+      placeholder: 'Descrição do objeto contratado…',
+      autocomplete: 'off',
+    },
+    modalidade: {
+      id: 'modalidade',
+      label: 'Modalidade da contratação',
+      input: 'select',
+      required: true,
+      placeholder: 'Selecione a modalidade',
+      options: observedModeOptions,
+    },
+    dataInicio: {
+      id: 'dataInicio',
+      label: 'Início da vigência',
+      input: 'date',
+      required: true,
+    },
+    prazo: {
+      id: 'prazo',
+      label: 'Prazo (meses)',
+      input: 'number',
+      required: true,
+      placeholder: 'Ex.: 12',
+    },
+    valorMensal: {
+      id: 'valorMensal',
+      label: 'Valor mensal',
+      input: 'currency',
+      required: true,
+      placeholder: 'R$ 0,00',
+    },
+    valorTotal: {
+      id: 'valorTotal',
+      label: 'Valor total do contrato',
+      input: 'calculated',
+      formula: [
+        { kind: 'field', fieldId: 'valorMensal' },
+        { kind: 'op', op: '*' },
+        { kind: 'field', fieldId: 'prazo' },
+      ],
+    },
+  },
+  sections: [
+    {
+      id: 'partes',
+      title: '1. Partes',
+      description: 'Contratante, contratada e CNPJ.',
+      kind: 'fields',
+      fieldIds: ['contratante', 'contratada', 'cnpj'],
+    },
+    {
+      id: 'objetoSection',
+      title: '2. Objeto e vigência',
+      description: 'Objeto, modalidade, início e prazo.',
+      kind: 'fields',
+      fieldIds: ['objeto', 'modalidade', 'dataInicio', 'prazo'],
+    },
+    {
+      id: 'valores',
+      title: '3. Valores',
+      description: 'Valor mensal e total do contrato (calculado).',
+      kind: 'fields',
+      fieldIds: ['valorMensal', 'valorTotal'],
+    },
+    {
+      id: 'review',
+      title: 'Revisão final',
+      description: 'Valide a prévia consolidada antes de concluir o termo.',
+      kind: 'review',
+    },
+  ],
+}
+
+/** Modelos de demonstração (tipos custom), publicados na carga inicial. */
+const demoModels: ModelDefinition[] = [laudoModel, contratoModel]
+
 /**
  * Modelos padrão da Fase 1, agora usados como SEED da store de modelos
  * (Fase 2). A Sustentação pode criar outros modelos por tipo; o accessor
@@ -529,8 +783,10 @@ export const standardModelByType: Record<DocType, ModelDefinition> = {
   tr: trModel,
 }
 
-export const standardModels: ModelDefinition[] =
-  Object.values(standardModelByType)
+export const standardModels: ModelDefinition[] = [
+  ...Object.values(standardModelByType),
+  ...demoModels,
+]
 
 export function getResponsibleUnitOptions() {
   return unitOptions
