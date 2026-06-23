@@ -16,10 +16,21 @@ import {
  */
 type DocTypesState = {
   types: DocumentType[]
-  /** Cria um tipo avulso. Retorna o id novo (slug da sigla, deduplicado). */
-  createDocType: (input: { sigla: string; nome: string }) => string
-  /** Renomeia sigla/nome de um tipo. No-op em tipos-semente. O id nunca muda. */
-  renameDocType: (id: string, patch: { sigla?: string; nome?: string }) => void
+  /** Cria um tipo. Retorna o id novo (slug da sigla, deduplicado). */
+  createDocType: (input: {
+    sigla: string
+    nome: string
+    parentTypeId?: string | null
+  }) => string
+  /**
+   * Atualiza sigla/nome e/ou o tipo pai (`parentTypeId`) de um tipo. No-op em
+   * tipos-semente. O id nunca muda. `parentTypeId` invalido (self/ciclo/
+   * inexistente) e ignorado; `null` torna o tipo avulso.
+   */
+  updateDocType: (
+    id: string,
+    patch: { sigla?: string; nome?: string; parentTypeId?: string | null }
+  ) => void
   /** Remove um tipo. No-op em tipos-semente. */
   deleteDocType: (id: string) => void
 }
@@ -48,19 +59,40 @@ function uniqueTypeId(sigla: string, existing: DocumentType[]): string {
   return `${base}-${suffix}`
 }
 
+/** `ancestorId` e ancestral de `typeId` subindo por `parentTypeId` (guarda ciclo). */
+function isAncestorOf(
+  types: DocumentType[],
+  ancestorId: string,
+  typeId: string
+): boolean {
+  const byId = new Map(types.map((type) => [type.id, type]))
+  let current = byId.get(typeId)?.parentTypeId ?? null
+  const seen = new Set<string>([typeId])
+  while (current && !seen.has(current)) {
+    if (current === ancestorId) return true
+    seen.add(current)
+    current = byId.get(current)?.parentTypeId ?? null
+  }
+  return false
+}
+
 export const useDocTypesStore = create<DocTypesState>()((set, get) => ({
   types: seedDocumentTypes,
 
-  createDocType: ({ sigla, nome }) => {
+  createDocType: ({ sigla, nome, parentTypeId = null }) => {
     const existing = get().types
     const id = uniqueTypeId(sigla, existing)
     const order =
       existing.reduce((max, type) => Math.max(max, type.order), -1) + 1
+    const parent =
+      parentTypeId && existing.some((type) => type.id === parentTypeId)
+        ? parentTypeId
+        : null
     const type: DocumentType = {
       id,
       sigla: sigla.trim(),
       nome: nome.trim(),
-      parentTypeId: null,
+      parentTypeId: parent,
       order,
       seed: false,
     }
@@ -68,18 +100,37 @@ export const useDocTypesStore = create<DocTypesState>()((set, get) => ({
     return id
   },
 
-  renameDocType: (id, patch) =>
-    set((state) => ({
-      types: state.types.map((type) =>
-        type.id === id && !type.seed
-          ? {
-              ...type,
-              sigla: patch.sigla?.trim() || type.sigla,
-              nome: patch.nome?.trim() || type.nome,
-            }
-          : type
-      ),
-    })),
+  updateDocType: (id, patch) =>
+    set((state) => {
+      const target = state.types.find((type) => type.id === id)
+      if (!target || target.seed) return {}
+      let parentTypeId = target.parentTypeId
+      if (patch.parentTypeId !== undefined) {
+        const proposed = patch.parentTypeId
+        if (proposed === null) {
+          parentTypeId = null
+        } else if (
+          proposed !== id &&
+          state.types.some((type) => type.id === proposed) &&
+          !isAncestorOf(state.types, id, proposed)
+        ) {
+          parentTypeId = proposed
+        }
+        // proposta invalida (self/ciclo/inexistente): mantem o pai atual
+      }
+      return {
+        types: state.types.map((type) =>
+          type.id === id
+            ? {
+                ...type,
+                sigla: patch.sigla?.trim() || type.sigla,
+                nome: patch.nome?.trim() || type.nome,
+                parentTypeId,
+              }
+            : type
+        ),
+      }
+    }),
 
   deleteDocType: (id) =>
     set((state) => ({

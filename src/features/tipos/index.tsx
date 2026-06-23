@@ -4,6 +4,8 @@ import {
   CheckCircle2,
   CircleAlert,
   FileText,
+  GitBranch,
+  Link2,
   Lock,
   Pencil,
   Plus,
@@ -35,12 +37,32 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/ui/dialog'
-import { Field, FieldGroup, FieldLabel } from '@/shared/ui/field'
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from '@/shared/ui/field'
 import { Input } from '@/shared/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
+import {
+  canBeParent,
+  docTypeLabel,
+  isChainRootType,
+} from '@/features/documents/data/doc-type'
 import { type DocumentType } from '@/features/documents/data/doc-types-registry'
 import { trs } from '@/features/documents/data/trs'
 import { useDocTypesStore } from '@/features/documents/store/use-doc-types-store'
 import { useModelsStore } from '@/features/models/store/use-models-store'
+
+/** Valor-sentinela do Select de pai para "sem pai" (Radix nao aceita value vazio). */
+const NO_PARENT = '__none__'
 
 /** Conta documentos (mock) e modelos de um tipo + se ha modelo publicado. */
 function useTypeStats() {
@@ -59,11 +81,11 @@ function useTypeStats() {
 
 function TypeCard({
   type,
-  onRename,
+  onEdit,
   onDelete,
 }: {
   type: DocumentType
-  onRename: (type: DocumentType) => void
+  onEdit: (type: DocumentType) => void
   onDelete: (type: DocumentType) => void
 }) {
   const statsOf = useTypeStats()
@@ -86,6 +108,16 @@ function TypeCard({
             <Badge variant='outline' className='gap-1'>
               <Lock aria-hidden='true' className='size-3.5' />
               Padrão
+            </Badge>
+          ) : type.parentTypeId ? (
+            <Badge variant='outline' className='gap-1'>
+              <Link2 aria-hidden='true' className='size-3.5' />
+              Segue de {docTypeLabel(type.parentTypeId)}
+            </Badge>
+          ) : isChainRootType(type.id) ? (
+            <Badge variant='outline' className='gap-1'>
+              <GitBranch aria-hidden='true' className='size-3.5' />
+              Raiz de cadeia
             </Badge>
           ) : (
             <Badge variant='outline' className='gap-1'>
@@ -138,10 +170,10 @@ function TypeCard({
                 variant='outline'
                 size='sm'
                 className='rounded-xl'
-                onClick={() => onRename(type)}
+                onClick={() => onEdit(type)}
               >
                 <Pencil aria-hidden='true' className='size-4' />
-                Renomear
+                Editar
               </Button>
               <Button
                 variant='ghost'
@@ -163,7 +195,7 @@ function TypeCard({
 export function TiposListPage() {
   const types = useDocTypesStore((state) => state.types)
   const createDocType = useDocTypesStore((state) => state.createDocType)
-  const renameDocType = useDocTypesStore((state) => state.renameDocType)
+  const updateDocType = useDocTypesStore((state) => state.updateDocType)
   const deleteDocType = useDocTypesStore((state) => state.deleteDocType)
   const createDraftModel = useModelsStore((state) => state.createDraftModel)
   const deleteModel = useModelsStore((state) => state.deleteModel)
@@ -175,6 +207,7 @@ export function TiposListPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [sigla, setSigla] = useState('')
   const [nome, setNome] = useState('')
+  const [parentTypeId, setParentTypeId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<DocumentType | null>(null)
 
   const q = query.trim().toLowerCase()
@@ -192,17 +225,29 @@ export function TiposListPage() {
     [ordered, q]
   )
 
+  // Tipos validos como pai: na edicao, exclui o proprio e seus descendentes
+  // (evita ciclo); na criacao, qualquer tipo serve.
+  const parentOptions = useMemo(
+    () =>
+      ordered.filter((type) =>
+        editingId ? canBeParent(editingId, type.id) : true
+      ),
+    [ordered, editingId]
+  )
+
   function openCreate() {
     setEditingId(null)
     setSigla('')
     setNome('')
+    setParentTypeId(null)
     setFormOpen(true)
   }
 
-  function openRename(type: DocumentType) {
+  function openEdit(type: DocumentType) {
     setEditingId(type.id)
     setSigla(type.sigla)
     setNome(type.nome)
+    setParentTypeId(type.parentTypeId)
     setFormOpen(true)
   }
 
@@ -211,12 +256,12 @@ export function TiposListPage() {
   function handleSubmit() {
     if (!canSubmit) return
     if (editingId) {
-      renameDocType(editingId, { sigla, nome })
+      updateDocType(editingId, { sigla, nome, parentTypeId })
       toast.success('Tipo atualizado.')
       setFormOpen(false)
       return
     }
-    const typeId = createDocType({ sigla, nome })
+    const typeId = createDocType({ sigla, nome, parentTypeId })
     const modelId = createDraftModel(typeId)
     setFormOpen(false)
     toast.success(`Tipo ${sigla.trim()} criado. Defina os campos do modelo.`)
@@ -287,7 +332,7 @@ export function TiposListPage() {
               <TypeCard
                 key={type.id}
                 type={type}
-                onRename={openRename}
+                onEdit={openEdit}
                 onDelete={setDeleting}
               />
             ))}
@@ -303,11 +348,11 @@ export function TiposListPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingId ? 'Renomear tipo' : 'Novo tipo de documento'}
+              {editingId ? 'Editar tipo' : 'Novo tipo de documento'}
             </DialogTitle>
             <DialogDescription>
               {editingId
-                ? 'Atualize a sigla e o nome. O identificador do tipo não muda.'
+                ? 'Atualize a sigla, o nome e a cadeia. O identificador do tipo não muda.'
                 : 'Informe a sigla e o nome. Depois você define os campos do modelo e o publica para liberar o tipo.'}
             </DialogDescription>
           </DialogHeader>
@@ -332,6 +377,31 @@ export function TiposListPage() {
                 placeholder='Ex.: Laudo Técnico'
                 autoComplete='off'
               />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor='tipo-parent'>Segue de (cadeia)</FieldLabel>
+              <Select
+                value={parentTypeId ?? NO_PARENT}
+                onValueChange={(value) =>
+                  setParentTypeId(value === NO_PARENT ? null : value)
+                }
+              >
+                <SelectTrigger id='tipo-parent'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_PARENT}>Nenhum (avulso)</SelectItem>
+                  {parentOptions.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.sigla} - {type.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldDescription>
+                Documentos deste tipo herdam os campos comuns do tipo anterior,
+                como na cadeia DFD, ETP e TR.
+              </FieldDescription>
             </Field>
           </FieldGroup>
 
