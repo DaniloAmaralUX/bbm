@@ -37,6 +37,6 @@ function RoleRedirect({ allow, role }: { allow: UserRole; role: UserRole }) {
 
 function blockedMessage(allow: UserRole): string {
   return allow === 'sustentacao'
-    ? 'Modelos é exclusivo do perfil Sustentação.'
+    ? 'Esta área é exclusiva do perfil Sustentação.'
     : 'Criar documento é do perfil Requisitante.'
 }

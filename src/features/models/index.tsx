@@ -7,6 +7,7 @@ import {
   PencilRuler,
   Plus,
   Search,
+  Shapes,
 } from 'lucide-react'
 import { formatDocDate } from '@/shared/lib/format-date'
 import { Header } from '@/shared/layout/header'
@@ -20,6 +21,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu'
 import { Input } from '@/shared/ui/input'
@@ -181,6 +183,11 @@ export function ModelsListPage() {
                   {docTypeLabel(docType)} - {docTypeFullLabel(docType)}
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => navigate({ to: '/tipos' })}>
+                <Shapes aria-hidden='true' className='size-4' />
+                Gerenciar tipos
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
