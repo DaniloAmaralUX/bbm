@@ -8,7 +8,7 @@ import {
   Minus,
 } from 'lucide-react'
 import { type ChainRole, chainRoleLabels, chainRoleValues } from './chain'
-import { type DocType, docTypeLabel, docTypes } from './doc-type'
+import { type DocType, allDocTypes, docTypeLabel } from './doc-type'
 
 export const trStatuses = [
   {
@@ -119,7 +119,7 @@ export const docTypeOptions: {
   label: string
   value: DocType
   icon: React.ComponentType<{ className?: string }>
-}[] = docTypes.map((docType) => ({
+}[] = allDocTypes().map((docType) => ({
   label: docTypeLabel(docType),
   value: docType,
   icon: FileText,

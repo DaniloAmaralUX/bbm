@@ -2,9 +2,9 @@ import { ArrowRight, Check, Lock } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import {
   type DocType,
+  chainTypesOf,
   docTypeFullLabel,
   docTypeLabel,
-  docTypes,
 } from '@/features/documents/data/doc-type'
 
 type ChainStepperProps = {
@@ -39,14 +39,15 @@ export function TRStepper({
   locked,
   onSelect,
 }: ChainStepperProps) {
+  const chainTypes = chainTypesOf(current)
   return (
     <nav
       aria-label='Cadeia documental'
       className='flex flex-col items-stretch gap-2 sm:flex-row sm:items-stretch'
     >
-      {docTypes.map((docType, index) => {
+      {chainTypes.map((docType, index) => {
         const state = stepStateFor(docType, current, done, locked)
-        const isLast = index === docTypes.length - 1
+        const isLast = index === chainTypes.length - 1
         return (
           <div
             key={docType}

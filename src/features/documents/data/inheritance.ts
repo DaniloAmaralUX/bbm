@@ -1,6 +1,6 @@
 import {
   type DocType,
-  docTypes,
+  chainTypesOf,
   parentOf,
 } from '@/features/documents/data/doc-type'
 import {
@@ -236,8 +236,8 @@ export function concludeDocument(
 ): ChainState {
   const done = { ...state.done, [docType]: true }
   let next: ChainState = { ...state, done }
-  const order = docTypes.indexOf(docType)
-  const successor = docTypes[order + 1]
+  const chain = chainTypesOf(docType)
+  const successor = chain[chain.indexOf(docType) + 1]
   if (successor) next = inheritCommonFields(next, successor)
   return next
 }
@@ -288,32 +288,31 @@ export function createChainState(opts: {
   seedByType?: Partial<Record<DocType, Record<string, string>>>
 }): ChainState {
   const { current, done = {}, seedByType = {} } = opts
+  const types = chainTypesOf(current)
 
-  const selectedModelId: Record<DocType, string> = {
-    dfd: getModelForDocType('dfd').id,
-    etp: getModelForDocType('etp').id,
-    tr: getModelForDocType('tr').id,
+  const selectedModelId: Record<string, string> = {}
+  const doneByType: Record<string, boolean> = {}
+  const cells: Record<string, DocumentCells> = {}
+  for (const docType of types) {
+    const model = getModelForDocType(docType)
+    selectedModelId[docType] = model.id
+    doneByType[docType] = done[docType] ?? false
+    cells[docType] = createCellsForModel(model, seedByType[docType])
   }
 
   let state: ChainState = {
     current,
-    done: {
-      dfd: done.dfd ?? false,
-      etp: done.etp ?? false,
-      tr: done.tr ?? false,
-    },
+    done: doneByType,
     selectedModelId,
-    cells: {
-      dfd: createCellsForModel(getModelForDocType('dfd'), seedByType.dfd),
-      etp: createCellsForModel(getModelForDocType('etp'), seedByType.etp),
-      tr: createCellsForModel(getModelForDocType('tr'), seedByType.tr),
-    },
+    cells,
   }
 
-  // Semeia a heranca nos descendentes (campos comuns ja aparecem como herdados
-  // antes mesmo da conclusao, como no protótipo).
-  state = inheritCommonFields(state, 'etp')
-  state = inheritCommonFields(state, 'tr')
+  // Semeia a heranca nos descendentes em ordem de cadeia (campos comuns ja
+  // aparecem como herdados antes mesmo da conclusao, como no protótipo). A raiz
+  // da cadeia (sem pai) nao herda de ninguem.
+  for (const docType of types) {
+    if (parentOf(docType) !== null) state = inheritCommonFields(state, docType)
+  }
   return state
 }
 

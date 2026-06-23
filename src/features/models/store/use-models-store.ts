@@ -237,9 +237,29 @@ export function getModelsByDocType(docType: DocType): ModelDefinition[] {
 }
 
 /**
+ * Modelo vazio sintetico para um tipo sem nenhum modelo cadastrado nem semente
+ * padrao. Garante o invariante de `getModelForDocType` ("sempre definido") agora
+ * que DocType=string nao limita mais `standardModelByType` aos tipos-semente.
+ */
+function emptyModelFor(docType: DocType): ModelDefinition {
+  return {
+    id: `model-${docType}-vazio`,
+    docType,
+    name: docTypeFullLabel(docType),
+    label: docTypeFullLabel(docType),
+    intro: '',
+    state: 'draft',
+    version: 1,
+    updatedAt: nowStamp(),
+    fields: {},
+    sections: [],
+  }
+}
+
+/**
  * Modelo publicado padrão (o primeiro) de um tipo de documento. Usado pela
- * cadeia/wizard da Fase 1. Cai no modelo padrão semeado se nada estiver
- * publicado (garante retorno sempre definido).
+ * cadeia/wizard da Fase 1. Cai no modelo padrão semeado e, por fim, num modelo
+ * vazio sintetico se nada existir (garante retorno sempre definido).
  */
 export function getModelForDocType(docType: DocType): ModelDefinition {
   const models = useModelsStore.getState().models
@@ -248,5 +268,6 @@ export function getModelForDocType(docType: DocType): ModelDefinition {
   )
   if (published) return published
   const anyOfType = models.find((model) => model.docType === docType)
-  return anyOfType ?? standardModelByType[docType]
+  const seeded: ModelDefinition | undefined = standardModelByType[docType]
+  return anyOfType ?? seeded ?? emptyModelFor(docType)
 }

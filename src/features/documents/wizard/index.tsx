@@ -48,9 +48,9 @@ import {
 } from '@/features/documents/data/chain'
 import {
   type DocType,
+  chainTypesOf,
   docTypeFullLabel,
   docTypeLabel,
-  docTypes,
 } from '@/features/documents/data/doc-type'
 import {
   type DocumentCells,
@@ -126,9 +126,9 @@ export function TRWizardPage({
     [context.title, context.responsibleUnit, model, documentData]
   )
 
-  const lockedMap = useMemo<Record<DocType, boolean>>(() => {
-    const map = {} as Record<DocType, boolean>
-    for (const docType of docTypes) {
+  const lockedMap = useMemo<Record<string, boolean>>(() => {
+    const map: Record<string, boolean> = {}
+    for (const docType of chainTypesOf(chain.current)) {
       map[docType] = isDocumentLocked(chain, docType)
     }
     return map

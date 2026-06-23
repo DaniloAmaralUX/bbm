@@ -1,7 +1,13 @@
 import { formatDocDate } from '@/shared/lib/format-date'
 import { childrenOf, isConcluded } from './chain'
 import { type TRStatus, trStatusTokens } from './data'
-import { type DocType, docTypeLabel, docTypes } from './doc-type'
+import {
+  type DocType,
+  allDocTypes,
+  chainTypesOf,
+  docTypeLabel,
+  isChainRootType,
+} from './doc-type'
 import { type TRItem } from './schema'
 
 /**
@@ -74,9 +80,9 @@ export function recentDocuments(items: TRItem[], limit = 5): RecentDocument[] {
 
 export type DocTypeCount = { docType: DocType; label: string; records: number }
 
-/** Conta documentos por tipo (DFD/ETP/TR), na ordem da cadeia. */
+/** Conta documentos por tipo, na ordem do registry. */
 export function countByDocType(items: TRItem[]): DocTypeCount[] {
-  return docTypes.map((docType) => ({
+  return allDocTypes().map((docType) => ({
     docType,
     label: docTypeLabel(docType),
     records: items.filter((item) => item.docType === docType).length,
@@ -101,36 +107,48 @@ export type ChainFunnel = {
 }
 
 /**
- * Funil de conclusao da cadeia: para cada DFD (raiz), quantos concluiram o DFD,
- * depois o ETP, depois o TR. A "taxa de conclusao" (RF-14) e a fracao de cadeias
- * que chegaram a um TR aprovado.
+ * Funil de conclusao da cadeia: a partir do tipo-raiz (sem pai e com filhos no
+ * registry), conta quantas cadeias concluiram cada etapa, em ordem. A contagem
+ * e monotonica — uma etapa so conta se a anterior foi concluida na mesma cadeia
+ * (a regra de dependencia da cadeia garante que um filho concluido tem o pai
+ * concluido). A "taxa de conclusao" (RF-14) e a fracao de cadeias que chegaram
+ * ao ultimo documento concluido. Sem cadeia ramificada no registry, vazio.
  */
 export function chainCompletion(items: TRItem[]): ChainFunnel {
-  const roots = items.filter((item) => item.docType === 'dfd')
-  let dfdDone = 0
-  let etpDone = 0
-  let trDone = 0
+  const rootType = allDocTypes().find(isChainRootType)
+  if (!rootType) {
+    return { totalChains: 0, stages: [], completedChains: 0, rate: 0 }
+  }
+
+  const chainTypes = chainTypesOf(rootType)
+  const roots = items.filter((item) => item.docType === rootType)
+  const counts = chainTypes.map(() => 0)
 
   for (const root of roots) {
-    if (isConcluded(root)) dfdDone += 1
-    const etp = childrenOf(root.id, items).find((c) => c.docType === 'etp')
-    if (etp && isConcluded(etp)) {
-      etpDone += 1
-      const tr = childrenOf(etp.id, items).find((c) => c.docType === 'tr')
-      if (tr && isConcluded(tr)) trDone += 1
+    let node: TRItem | undefined = root
+    for (let stage = 0; stage < chainTypes.length; stage += 1) {
+      if (!node || node.docType !== chainTypes[stage] || !isConcluded(node)) {
+        break
+      }
+      counts[stage] += 1
+      const nextType = chainTypes[stage + 1]
+      node = nextType
+        ? childrenOf(node.id, items).find((child) => child.docType === nextType)
+        : undefined
     }
   }
 
   const totalChains = roots.length
+  const completedChains = counts[counts.length - 1] ?? 0
   return {
     totalChains,
-    stages: [
-      { docType: 'dfd', label: 'DFD concluído', count: dfdDone },
-      { docType: 'etp', label: 'ETP concluído', count: etpDone },
-      { docType: 'tr', label: 'TR concluído', count: trDone },
-    ],
-    completedChains: trDone,
-    rate: totalChains === 0 ? 0 : trDone / totalChains,
+    stages: chainTypes.map((docType, stage) => ({
+      docType,
+      label: `${docTypeLabel(docType)} concluído`,
+      count: counts[stage],
+    })),
+    completedChains,
+    rate: totalChains === 0 ? 0 : completedChains / totalChains,
   }
 }
 
